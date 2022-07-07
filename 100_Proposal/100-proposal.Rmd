@@ -1,0 +1,73 @@
+---
+title: "Stat 420 Final Project Proposal"
+author: "STAT 420, Summer 2022, D. Unger"
+date: ''
+output:
+  pdf_document: default
+  html_document: 
+    theme: readable
+    toc: yes  
+urlcolor: cyan
+---
+
+# Stat 420 Final Project Proposal
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+options(scipen = 1, digits = 4, width = 80, fig.alin = "center")
+
+library(ggplot2)
+```
+
+## 1. Team Member information
+
+Team Member's Names: 
+ - Kathryn DeWitt
+ - Shashank Thakur
+ - Avinash Tiwari
+
+NetIDs: 
+ - kdewitt3
+ - sthakur5
+ - tiwari6
+
+## 2. Proposed Title: 
+
+//TODO: Discussion of proposed title
+
+## 3. Description of Data File
+
+//TODO: Description of the data file (what they contain including number of variables and number of records). You do not necessarily have to list all the variables, but at least mention those of greatest importance.
+
+```{r description of file, echo=FALSE}
+#TODO: can use R here without printing code to list columns/types via kable
+
+#housing_prices <- read.csv("~/house_price_prediction/000_Data/Jiffs_House_Prediction/house_price_dataset_original_v2_cleaned.csv") 
+
+```
+
+
+## 4. Background on datasets
+
+//TODO: Background information on the data sets, including specific citation of their source (so that I can also access it).
+
+## 5. Research Question/Interest in Data Set
+
+//TODO: A brief statement of the business, science, research, or personal interest you have in the data set which you hope to explore
+
+```{r plot of data, echo=FALSE}
+#TODO: if we want to go the extra mile, we can histogram or scatter plot our response variable without showing the code
+
+```
+
+
+## 6. Evidence of Loading into R
+
+//TODO: Evidence that the data can be loaded into R. Load the data, and print the first few values of the response variable as evidence.
+
+
+
+```{r}
+#TODO: load in the dataset and print first few obs
+```
+
+

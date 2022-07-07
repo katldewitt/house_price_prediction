@@ -1,0 +1,43 @@
+---
+title: "Stat 420 Final Project Proposal"
+author: "STAT 420, Summer 2022, D. Unger"
+date: ''
+output:
+  pdf_document: default
+  html_document: 
+    theme: readable
+    toc: yes  
+urlcolor: cyan
+---
+
+# Predicting House Price 
+
+//TODO: add finalized title
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+options(scipen = 1, digits = 4, width = 80, fig.alin = "center")
+
+library(ggplot2)
+```
+
+## Introduction
+
+## Methods
+
+## Results
+
+## Discussion
+
+## Appendix 
+
+### Authors
+
+Team Member's Names: 
+ - Kathryn DeWitt
+ - Shashank Thakur
+ - Avinash Tiwari
+
+NetIDs: 
+ - kdewitt3
+ - sthakur5
+ - tiwari6

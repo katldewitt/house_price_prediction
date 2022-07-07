@@ -1,0 +1,36 @@
+---
+title: "Stat 420 Final Project Work"
+author: "STAT 420, Summer 2022, D. Unger"
+date: ''
+output:
+  pdf_document: default
+  html_document: 
+    theme: readable
+    toc: yes  
+urlcolor: cyan
+---
+
+# Analysis Workbook
+
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+options(scipen = 1, digits = 4, width = 80, fig.alin = "center")
+
+library(ggplot2)
+```
+
+## Define Helper Functions
+
+## EDA
+
+## Data cleaning
+
+## Variable Creation
+
+## Model Building
+
+## Model Selection
+
+## Graphs and Tables  
+
+## QA: How do we know what we did makes sense?
