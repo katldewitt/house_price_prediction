@@ -21,20 +21,24 @@ library(ggplot2)
 ## 1. Team Member information
 
 Team Member's Names: 
+
  - Kathryn DeWitt
  - Shashank Thakur
  - Avinash Tiwari
 
 NetIDs: 
+
  - kdewitt3
  - sthakur5
  - tiwari6
 
 ## 2. Proposed Title: 
 
-//TODO: Discussion of proposed title
+We propose calling our project **Modeling California Housing Prices**.
 
 ## 3. Description of Data File
+
+//Avi
 
 //TODO: Description of the data file (what they contain including number of variables and number of records). You do not necessarily have to list all the variables, but at least mention those of greatest importance.
 
@@ -48,9 +52,13 @@ NetIDs:
 
 ## 4. Background on datasets
 
+//Shashank
 //TODO: Background information on the data sets, including specific citation of their source (so that I can also access it).
 
 ## 5. Research Question/Interest in Data Set
+
+//Avi
+//Kathryn
 
 //TODO: A brief statement of the business, science, research, or personal interest you have in the data set which you hope to explore
 
@@ -61,6 +69,8 @@ NetIDs:
 
 
 ## 6. Evidence of Loading into R
+
+//Shashank
 
 //TODO: Evidence that the data can be loaded into R. Load the data, and print the first few values of the response variable as evidence.
 
