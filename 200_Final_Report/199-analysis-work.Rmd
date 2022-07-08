@@ -29,9 +29,39 @@ Everyone make own file for work.
 ## EDA
 -shared by 7/13
 
+```{r Kathryn EDA}
+#Read in the data
+housing_prices <- read.csv("C:/School/Stat_420/house_price_prediction/000_Data/california-housing-prices/housing.csv")
+
+#review the first few rows
+head(housing_prices)
+str(housing_prices)
+summary(housing_prices)
+
+plot(housing_prices)
+
+#Check ocean proximity
+housing_prices$ocean_proximity <- as.factor(housing_prices$ocean_proximity)
+table(housing_prices$ocean_proximity)
+
+plot(log(median_house_value) ~ ocean_proximity, housing_prices)
+
+#Check density per block 
+boxplot(housing_prices$population / housing_prices$total_rooms)
+
+#I think this obs should be thown out.
+housing_prices[which.max(housing_prices$population / housing_prices$total_rooms),]
+```
+
+
 ## Data cleaning
 -agreed/coordinate
 -shared by 7/13
+
+```{r}
+#TODO: Use lat/long to get zip code?
+```
+
 
 ## Variable Creation
 -shared 7/22
