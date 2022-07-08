@@ -3,10 +3,10 @@ title: "Stat 420 Final Project Proposal"
 author: "STAT 420, Summer 2022, D. Unger"
 date: ''
 output:
-  pdf_document: default
   html_document: 
     theme: readable
     toc: yes  
+  pdf_document: default
 urlcolor: cyan
 ---
 
@@ -84,9 +84,11 @@ The data contains information from the 1990 California census and pertains to ho
 
 ## 6. Evidence of Loading into R
 
-//Shashank
+```{r read_data_file}
+ca_housing_data = read.csv('../000_Data/california-housing-prices/housing.csv')
+head(ca_housing_data)
+```
 
-//TODO: Evidence that the data can be loaded into R. Load the data, and print the first few values of the response variable as evidence.
 
 
 
