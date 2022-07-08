@@ -40,6 +40,9 @@ summary(housing_prices)
 
 plot(housing_prices)
 
+#Checking median age
+hist(housing_prices$housing_median_age)
+
 #Check ocean proximity
 housing_prices$ocean_proximity <- as.factor(housing_prices$ocean_proximity)
 table(housing_prices$ocean_proximity)
@@ -59,7 +62,7 @@ housing_prices[which.max(housing_prices$population / housing_prices$total_rooms)
 -shared by 7/13
 
 ```{r}
-#TODO: Use lat/long to get zip code?
+#Idea: Use lat/long to get zip code?
 ```
 
 
