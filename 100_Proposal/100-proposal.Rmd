@@ -3,10 +3,10 @@ title: "Stat 420 Final Project Proposal"
 author: "STAT 420, Summer 2022, D. Unger"
 date: ''
 output:
-  pdf_document: default
   html_document: 
     theme: readable
     toc: yes  
+  pdf_document: default
 urlcolor: cyan
 ---
 
@@ -38,46 +38,28 @@ We propose calling our project **Modeling California Housing Prices**.
 
 ## 3. Description of Data File
 
-/*Avi
-
 'California Housing Prices' dataset pertains to the houses found in a given California district and some summary stats about them based on the 1990 census data. There are 10 columns and 20.6K rows in the data. The columns are as mentioned below: 
 
-1. longitude: Logitude of the house. A measure of how far west a house is; a higher value is farther west
-
-2. latitude: Latitude of the house. A measure of how far north a house is; a higher value is farther north
-
-3. housing_median_age: Median age of a house within a block; a lower number is a newer building
-
-4. total_rooms: Total number of rooms within a block
-
-5. total_bedrooms: Total number of bedrooms within a block
-
-6. population: Total number of people residing within a block
-
-7. households: Total number of households, a group of people residing within a home unit, for a block
-
-8. median_income: Median income for households within a block of houses (measured in tens of thousands of US Dollars)
-
-9. median_house_value: Median house value for households within a block (measured in US Dollars)
-
-10. ocean_proximity: Location of the house w.r.t ocean/sea
-
-Avi */
-
-//TODO: Description of the data file (what they contain including number of variables and number of records). You do not necessarily have to list all the variables, but at least mention those of greatest importance.
-
-```{r description of file, echo=FALSE}
-#TODO: can use R here without printing code to list columns/types via kable
-
-#housing_prices <- read.csv("~/house_price_prediction/000_Data/Jiffs_House_Prediction/house_price_dataset_original_v2_cleaned.csv") 
-
-```
+| **Column Name**    	| **Description**                                                                                   	|
+|--------------------	|---------------------------------------------------------------------------------------------------	|
+| longitude          	| Longitudinal location of block group of houses.                                                     |
+| latitude           	| Latitudinal location of block group of houses                                                     	|
+| housing_median_age 	| Median age of the houses in the block group                                                       	|
+| total_rooms        	| Total rooms in the group of houses                                                                	|
+| total_bedrooms     	| Total bedrooms in the block group                                                                 	|
+| population         	| Total number of people in the block group                                                         	|
+| households         	| Households comprised in the block group                                                           	|
+| median_income      	| Median income calculated from the individual income of house.                                     	|
+| median_house_value 	| Median house value of a block group.                                                              	|
+| ocean_proximity    	| Indicating whether each block group is near the ocean, near the Bay Area, inland or on an island. 	|
 
 
 ## 4. Background on datasets
 
-//Shashank
-//TODO: Background information on the data sets, including specific citation of their source (so that I can also access it).
+For our project we will be using the data set from kaggle [California Housing Prices](https://www.kaggle.com/datasets/camnugent/california-housing-prices)
+
+The data contains information from the 1990 California census and pertains to houses found in a given California district. It contains one row per census block group. A block group is the smallest geographical unit for which the U.S. Census Bureau publishes sample data (a block group typically has a population of 600 to 3,000 people).
+
 
 ## 5. Research Question/Interest in Data Set
 
@@ -94,9 +76,11 @@ Avi */
 
 ## 6. Evidence of Loading into R
 
-//Shashank
+```{r read_data_file}
+ca_housing_data = read.csv('../000_Data/california-housing-prices/housing.csv')
+head(ca_housing_data)
+```
 
-//TODO: Evidence that the data can be loaded into R. Load the data, and print the first few values of the response variable as evidence.
 
 
 
