@@ -19,18 +19,36 @@ options(scipen = 1, digits = 4, width = 80, fig.alin = "center")
 library(ggplot2)
 ```
 
+## Proposal
+7/10
+
+Everyone make own file for work. 
+
 ## Define Helper Functions
 
 ## EDA
+-shared by 7/13
 
 ## Data cleaning
+-agreed/coordinate
+-shared by 7/13
 
 ## Variable Creation
+-shared 7/24
 
 ## Model Building
+-shared 7/24
 
 ## Model Selection
+- share 7/24
+-coordinate 7/24
 
 ## Graphs and Tables  
+- coordinate 7/13
+-coordinate 7/24 
 
-## QA: How do we know what we did makes sense?
+## QA: How do we know what we did makes sense?.
+
+## Move to final report
+August 2nd (remember to knit often!!)
+Report Due August 5th
