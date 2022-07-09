@@ -38,16 +38,7 @@ We propose calling our project **Modeling California Housing Prices**.
 
 ## 3. Description of Data File
 
-//Avi
-
-//TODO: Description of the data file (what they contain including number of variables and number of records). You do not necessarily have to list all the variables, but at least mention those of greatest importance.
-
-```{r description of file, echo=FALSE}
-#TODO: can use R here without printing code to list columns/types via kable
-
-#housing_prices <- read.csv("~/house_price_prediction/000_Data/Jiffs_House_Prediction/house_price_dataset_original_v2_cleaned.csv") 
-
-```
+TESTESTEST
 
 
 ## 4. Background on datasets
