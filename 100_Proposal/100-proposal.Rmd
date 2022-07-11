@@ -3,10 +3,10 @@ title: "Stat 420 Final Project Proposal"
 author: "STAT 420, Summer 2022, D. Unger"
 date: ''
 output:
+  pdf_document: default
   html_document: 
     theme: readable
     toc: yes  
-  pdf_document: default
 urlcolor: cyan
 ---
 
@@ -40,18 +40,18 @@ We propose calling our project **Modeling California Housing Prices**.
 
 'California Housing Prices' dataset pertains to the houses found in a given California district and some summary stats about them based on the 1990 census data. There are 10 columns and 20.6K rows in the data. The columns are as mentioned below: 
 
-| **Column Name**    	| **Description**                                                                                   	|
-|--------------------	|---------------------------------------------------------------------------------------------------	|
-| longitude          	| Longitudinal location of block group of houses.                                                     |
-| latitude           	| Latitudinal location of block group of houses                                                     	|
-| housing_median_age 	| Median age of the houses in the block group                                                       	|
-| total_rooms        	| Total rooms in the group of houses                                                                	|
-| total_bedrooms     	| Total bedrooms in the block group                                                                 	|
-| population         	| Total number of people in the block group                                                         	|
-| households         	| Households comprised in the block group                                                           	|
-| median_income      	| Median income calculated from the individual income of house.                                     	|
-| median_house_value 	| Median house value of a block group.                                                              	|
-| ocean_proximity    	| Indicating whether each block group is near the ocean, near the Bay Area, inland or on an island. 	|
+| **Column Name**    	   | **Description**                                                                                   	|
+|------------------------|---------------------------------------------------------------------------------------------------	|
+| longitude          	   | Longitudinal location of block group of houses.                                                     |
+| latitude           	   | Latitudinal location of block group of houses                                                     	|
+| housing_median_age 	   | Median age of the houses in the block group                                                       	|
+| total_rooms        	   | Total rooms in the group of houses                                                                	|
+| total_bedrooms     	   | Total bedrooms in the block group                                                                 	|
+| population         	   | Total number of people in the block group                                                         	|
+| households         	   | Households comprised in the block group                                                           	|
+| median_income      	   | Median income calculated from the individual income of house.                                     	|
+| median_house_value 	   | Median house value of a block group.                                                              	|
+| ocean_proximity    	   | Indicating whether each block group is near the ocean, near the Bay Area, inland or on an island. 	|
 
 
 ## 4. Background on datasets
@@ -63,29 +63,25 @@ The data contains information from the 1990 California census and pertains to ho
 
 ## 5. Research Question/Interest in Data Set
 
-//Avi
-//Kathryn
+We would like to model median house value of a block group in CA in the 1990's based on administrative (Census) data. Given the recent turbulence in the real estate market and associated bidding wars, there's a renewed interest in what the value of a house is. The data set we propose using is interesting for the following reasons:
 
-//TODO: A brief statement of the business, science, research, or personal interest you have in the data set which you hope to explore
-
-```{r plot of data, echo=FALSE}
-#TODO: if we want to go the extra mile, we can histogram or scatter plot our response variable without showing the code
-
-```
+- Unlike scraped real estate data, the data set is gathered by an administrative body, the Census. Since the stakeholder involved in collecting the data is not interested in selling a house, we see different features represented that relate more to geography (Latitude, longitude), population density (population, number of households), and age of the building (median_housing_age).
+- The dataset is aggregated at the block level (rather than at the house level). This means our analysis is not directly modelling housing values, but the median housing value of a neighborhood. We  believe this will help us better to understand the value of the neighborhood as opposed to the value of the amenities of the individual houses.
+- Additionally, this data set meets the requirements set out by the project description:
+   - The dataset has more than 20,000 observations
+   - The dataset has a good mix of categorical and numerical variables to enable us to learn from the course
+   - The dataset has 10 columns
+   - The dataset is sourced from Kaggle which means there has been extensive work done by many researchers / learners around the world providing our team with a baseline to compare our model & methodology with others. We also learn from their work and explore how much improvement could be achieved by applying modeling techniques other than regression to achieve better model performance
 
 
 ## 6. Evidence of Loading into R
+
+We have included below evidence that the data can be loaded into R.
 
 ```{r read_data_file}
 ca_housing_data = read.csv('../000_Data/california-housing-prices/housing.csv')
 head(ca_housing_data)
 ```
 
-
-
-
-```{r}
-#TODO: load in the dataset and print first few obs
-```
 
 
