@@ -17,35 +17,131 @@ urlcolor: cyan
 options(scipen = 1, digits = 4, width = 80, fig.alin = "center")
 
 library(ggplot2)
+library(sf)
 ```
 
-## Proposal
-7/10
-
-Everyone make own file for work. 
 
 ## Define Helper Functions
 
+```{r}
+#read in the data
+
+read_in <- function(){
+  ca_housing_data = read.csv('../000_Data/california-housing-prices/housing.csv')
+
+  print("Data are loaded. Check structure")
+  print(summary(ca_housing_data))
+  print(str(ca_housing_data))
+
+  #turn ocean_proximity to factor
+  print("Convert ocean_proximity to factor")
+  ca_housing_data$ocean_proximity <- as.factor(ca_housing_data$ocean_proximity)
+  
+  ca_housing_data
+}
+
+ca_housing_data <- read_in()
+
+
+#convert_to_zip <- function(latitude, longitude){
+ #https://stackoverflow.com/questions/11280145/convert-lat-lon-to-zipcode-neighborhood-name
+#}
+
+```
+
+
 ## EDA
 -shared by 7/13
+
+```{r}
+## Map the data
+#Source: https://stackoverflow.com/questions/65233613/plot-a-map-using-lat-and-long-with-r
+my_sf <- st_as_sf(ca_housing_data, coords = c('longitude', 'latitude'))
+my_sf <- st_set_crs(my_sf, value = 4326)
+
+ggplot(my_sf) + 
+  geom_sf(aes(color = ocean_proximity)) +
+              labs( y = "Longitude", 
+                    x = "Latitude",
+                    title = "Graphic Of Median House Value by Ocean Proximity")
+
+ggplot(my_sf) + 
+  geom_sf(aes(color = median_house_value)) +
+              labs( y = "Longitude", 
+                    x = "Latitude",
+                    title = "Graphic Of Median House Value by Location")
+
+## pairs & Cor matrix
+numeric_vals <- unlist(lapply(ca_housing_data, is.numeric), use.names = FALSE)  
+pairs(ca_housing_data[,numeric_vals], col="red")
+round(cor(ca_housing_data[,numeric_vals]), 2)
+#Population and households are colinear
+#Population and Total rooms are also colinear
+#latitude and longitude are also highly correlated
+
+
+
+```
+
 
 ## Data cleaning
 -agreed/coordinate
 -shared by 7/13
 
+```{r}
+
+#create logged version of house value
+ca_housing_data$logged_house_value <- log(ca_housing_data$median_house_value)
+
+#How many missing values do we have?
+colSums(is.na(ca_housing_data))
+
+#Yes, let's drop those with missing total_bedrooms
+ca_housing_data_cln <- ca_housing_data[!is.na(ca_housing_data$total_bedrooms),]
+
+#Do any have any with total_bedrooms > total_rooms?
+sum(ca_housing_data_cln$total_bedrooms > ca_housing_data_cln$total_rooms)
+
+#Why is there a population of 3?
+ca_housing_data_cln[ca_housing_data_cln$population == 3,]
+
+#Ocean proximity - only 5 in island, and substantially different. I propose removing from consideration to avoid overfitting
+table(ca_housing_data_cln$ocean_proximity) 
+boxplot(median_house_value ~ ocean_proximity, ca_housing_data_cln)
+boxplot(logged_house_value ~ ocean_proximity, ca_housing_data_cln)
+
+
+#Long tail on these variables...
+hist(ca_housing_data_cln$total_rooms)
+hist(ca_housing_data_cln$total_bedrooms)
+hist(ca_housing_data_cln$households)
+hist(ca_housing_data_cln$population)
+```
+
+
 ## Variable Creation
 -shared 7/24
 
 ## Model Building
--shared 7/24
+```{r}
+initial_model <- lm(logged_house_value ~ . - median_house_value, ca_housing_data_cln)
+summary(initial_model)
+
+smaller_model <- lm(logged_house_value ~ longitude + latitude + ocean_proximity + population, ca_housing_data_cln)
+summary(smaller_model)
+```
+
 
 ## Model Selection
 - share 7/24
 -coordinate 7/24
 
 ## Graphs and Tables  
-- coordinate 7/13
--coordinate 7/24 
+
+```{r}
+
+```
+
 
 ## QA: How do we know what we did makes sense?.
 
