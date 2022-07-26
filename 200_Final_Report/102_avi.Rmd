@@ -3,105 +3,195 @@ title: "Stat 420 Final Project Work"
 author: "Avinash Tiwari - tiwari6"
 date: ''
 output:
-  pdf_document: default
   html_document: 
     theme: readable
     toc: yes  
+  pdf_document: default
 urlcolor: cyan
 ---
 
 # Analysis Workbook
+## Proposal
+## Define Helper Functions
+## EDA
 
 ```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
 options(scipen = 1, digits = 4, width = 80, fig.alin = "center")
+```
 
+
+```{r}
+# set seed
+set.seed(11)
+
+# Load libraries 
 library(ggplot2)
 ```
 
-## Proposal
-7/10
 
-Everyone make own file for work. 
-
-## Define Helper Functions
-
-## EDA
--shared by 7/13
 ```{r}
 ca_housing_data = read.csv('../000_Data/california-housing-prices/housing.csv')
 head(ca_housing_data)
-#View(ca_housing_data)
+View(ca_housing_data)
 str(ca_housing_data)
 ```
 
 ```{r}
-range(ca_housing_data$longitude)
-range(ca_housing_data$latitude)
-range(ca_housing_data$housing_median_age)
-range(ca_housing_data$total_rooms)
-range(ca_housing_data$total_bedrooms) #why? 
-range(ca_housing_data$population)
-range(ca_housing_data$households)
-range(ca_housing_data$median_income)
-range(ca_housing_data$median_house_value)
-table(ca_housing_data$ocean_proximity)
+# Missing Values
+which(is.na(ca_housing_data$longitude))
+which(is.na(ca_housing_data$latitude))
+which(is.na(ca_housing_data$housing_median_age))
+which(is.na(ca_housing_data$total_rooms))
+length(which(is.na(ca_housing_data$total_bedrooms)))
+which(is.na(ca_housing_data$population))
+which(is.na(ca_housing_data$households))
+which(is.na(ca_housing_data$median_income))
+which(is.na(ca_housing_data$median_house_value))
+which(is.na(ca_housing_data$ocean_proximity))
 ```
 
 ```{r}
-hist(ca_housing_data$longitude)
-hist(ca_housing_data$latitude)
-hist(ca_housing_data$housing_median_age)
-hist(ca_housing_data$total_rooms)
-hist(ca_housing_data$total_bedrooms)
-hist(ca_housing_data$population)
-hist(ca_housing_data$households)
-hist(ca_housing_data$median_income)
-hist(ca_housing_data$median_house_value)
-boxplot(ca_housing_data$ocean_proximity) #why? 
+apply(is.na(ca_housing_data), 2, which)
+apply(is.na(ca_housing_data), 2, sum)
 ```
 
 ```{r}
-ggplot(data = ca_housing_data) + 
-  geom_point(mapping = aes(x = housing_median_age, y = median_house_value))
+# delete rows with missing values - as only 207 rows have missing value for only one variable "total_bedrooms"
+nrow(ca_housing_data)
+cah_data = na.omit(ca_housing_data)
+nrow(ca_housing_data) - nrow(cah_data)
+```
+
+
+```{r}
+# range of variables 
+range(cah_data$longitude)
+range(cah_data$latitude)
+range(cah_data$housing_median_age)
+range(cah_data$total_rooms)
+range(cah_data$total_bedrooms) #why? 
+range(cah_data$population)
+range(cah_data$households)
+range(cah_data$median_income)
+range(cah_data$median_house_value)
+table(cah_data$ocean_proximity)
+```
+
+```{r}
+apply(cah_data, 2, range)
+```
+
+```{r}
+table(cah_data$ocean_proximity)
+```
+
+```{r}
+# cast ocean_proximity as factor variable
+cah_data$ocean_proximity = as.factor(cah_data$ocean_proximity)
+```
+
+
+```{r}
+# separating numerical and categorical vars for EDA
+cah_data_num = cah_data[ ,!sapply(cah_data, is.factor)]
+cah_data_cat = cah_data[ ,sapply(cah_data, is.factor)]
+```
+
+
+```{r}
+#histogram of numerical variables 
+hist(cah_data_num$longitude)
+hist(cah_data_num$latitude)
+hist(cah_data_num$housing_median_age)
+hist(cah_data_num$total_rooms)
+hist(cah_data_num$total_bedrooms)
+hist(cah_data_num$population)
+hist(cah_data_num$households)
+hist(cah_data_num$median_income)
+hist(cah_data_num$median_house_value)
+```
+
+
+```{r}
+table(cah_data_cat)
+```
+
+
+```{r}
+# heatmap of numerical variable pairs 
+library(faraway)
+pairs(cah_data_num, col = "dodgerblue")
+```
+```{r}
+# scatterplot with response 
+
+ggplot(data = cah_data_num) + 
+  geom_point(mapping = aes(x = longitude, y = median_house_value), col = "dodgerblue")
+
+ggplot(data = cah_data_num) + 
+  geom_point(mapping = aes(x = latitude, y = median_house_value), col = "dodgerblue")
+
+ggplot(data = cah_data_num) + 
+  geom_point(mapping = aes(x = housing_median_age, y = median_house_value), col = "dodgerblue")
+
+ggplot(data = cah_data_num) + 
+  geom_point(mapping = aes(x = total_rooms, y = median_house_value), col = "dodgerblue")
+
+ggplot(data = cah_data_num) + 
+  geom_point(mapping = aes(x = total_bedrooms, y = median_house_value), col = "dodgerblue")
+
+ggplot(data = cah_data_num) + 
+  geom_point(mapping = aes(x = population, y = median_house_value), col = "dodgerblue")
+
+ggplot(data = cah_data_num) + 
+  geom_point(mapping = aes(x = households, y = median_house_value), col = "dodgerblue")
+
+ggplot(data = cah_data_num) + 
+  geom_point(mapping = aes(x = median_income, y = median_house_value), col = "dodgerblue")
+
+```
+```{r}
+# Outlier Detection 
+mod_out = lm(median_house_value ~ ., data = cah_data_num)
+hatvalues(mod_out)
+which.max(hatvalues(mod_out)) 
+cah_data_num[which.max(hatvalues(mod_out)),]
+sum(hatvalues(mod_out) > 2 * mean(hatvalues(mod_out))) # 1330 observations 
+
+which.max(cooks.distance(mod_out) > 4/cooks.distance(mod_out))  # 15213
+
+max(cooks.distance(mod_out))
+cah_data_num[15361,]
+cah_data_num[15213,]
+
 ```
 
 ## Data cleaning
 
 ```{r}
-set.seed(11)
-cah_trn_idx  = sample(nrow(ca_housing_data), size = trunc(0.80 * nrow(ca_housing_data)))
-cah_trn_data = ca_housing_data[cah_trn_idx, ]
-cah_tst_data = ca_housing_data[-cah_trn_idx, ]
+cah_trn_idx  = sample(nrow(cah_data), size = trunc(0.80 * nrow(cah_data)))
+cah_trn_data = cah_data[cah_trn_idx, ]
+cah_tst_data = cah_data[-cah_trn_idx, ]
 ```
 
 ## Variable Creation
 ```{r}
-epa_data$type = as.factor(epa_data$type)
-
-ca_housing_data$pop_per_hh = ca_housing_data$population / ca_housing_data$households
-ca_housing_data$rooms_per_hh = ca_housing_data$total_rooms / ca_housing_data$households
-ca_housing_data$bedrooms_per_hh = ca_housing_data$total_bedrooms / ca_housing_data$households
-```
-
-```{r}
-set.seed(11)
-
-cah_trn_idx = sample(1:nrow(ca_housing_data), length(ca_housing_data$median_house_value)*0.8)
-cah_trn = ca_housing_data[cah_trn_idx,]
-cah_tst = ca_housing_data[-cah_trn_idx, ]
+cah_trn_data$ocean_proximity = as.factor(cah_trn_data$ocean_proximity)
+cah_trn_data$pop_per_hh = cah_trn_data$population / cah_trn_data$households
+cah_trn_data$rooms_per_hh = cah_trn_data$total_rooms / cah_trn_data$households
+cah_trn_data$bedrooms_per_hh = cah_trn_data$total_bedrooms / cah_trn_data$households
 ```
 
 ## Model Building
 ```{r}
-mod = lm(log(median_house_value) ~ . - (total_bedrooms + total_rooms + households + rooms_per_hh +  latitude + population), data = cah_trn)
+mod = lm(log(median_house_value) ~ . - (total_bedrooms + total_rooms + households + rooms_per_hh +  latitude + population), data = cah_trn_data)
 summary(mod)
 vif(mod)
 mod_fix = lm(log(median_house_value) ~ . - (total_bedrooms + total_rooms + households + rooms_per_hh +  latitude + population), data = cah_trn, subset = cooks.distance(mod) <= 4 / length(cah_trn$median_house_value))
-
 ```
 
 ```{r}
-mod_fix = lm(log(median_house_value) ~ . - (total_bedrooms + total_rooms + households + rooms_per_hh +  latitude + population), data = cah_trn, subset = cooks.distance(mod) <= 4 / length(cah_trn$median_house_value))
+mod_fix = lm(log(median_house_value) ~ . - (total_bedrooms + total_rooms + households + rooms_per_hh +  latitude + population), data = cah_trn_data, subset = cooks.distance(mod) <= 4 / length(cah_trn_data$median_house_value))
 summary(mod_fix)
 ```
 
@@ -147,21 +237,19 @@ summary(mod_aic)
 
 
 ```{r}
-y_hat_tst = predict(mod, newdata = cah_tst ) 
-sqrt(mean((y_hat_tst - cah_tst$median_house_value)^2, , na.rm = TRUE))
+
+cah_tst_data$ocean_proximity = as.factor(cah_tst_data$ocean_proximity)
+cah_tst_data$pop_per_hh = cah_tst_data$population / cah_tst_data$households
+cah_tst_data$rooms_per_hh = cah_tst_data$total_rooms / cah_tst_data$households
+cah_tst_data$bedrooms_per_hh = cah_tst_data$total_bedrooms / cah_tst_data$households
+
+
+y_hat_tst = predict(mod, newdata = cah_tst_data ) 
+sqrt(mean((y_hat_tst - cah_tst_data$median_house_value)^2, na.rm = TRUE))
 
 ```
 
 ## Model Selection
-- share 7/24
--coordinate 7/24
-
 ## Graphs and Tables  
-- coordinate 7/13
--coordinate 7/24 
-
 ## QA: How do we know what we did makes sense?.
-
 ## Move to final report
-August 2nd (remember to knit often!!)
-Report Due August 5th
