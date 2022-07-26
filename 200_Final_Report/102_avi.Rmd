@@ -1,6 +1,6 @@
 ---
 title: "Stat 420 Final Project Work"
-author: "STAT 420, Summer 2022, D. Unger"
+author: "Avinash Tiwari - tiwari6"
 date: ''
 output:
   pdf_document: default
@@ -11,7 +11,6 @@ urlcolor: cyan
 ---
 
 # Analysis Workbook
-
 
 ```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
 options(scipen = 1, digits = 4, width = 80, fig.alin = "center")
@@ -28,16 +27,130 @@ Everyone make own file for work.
 
 ## EDA
 -shared by 7/13
+```{r}
+ca_housing_data = read.csv('../000_Data/california-housing-prices/housing.csv')
+head(ca_housing_data)
+#View(ca_housing_data)
+str(ca_housing_data)
+```
+
+```{r}
+range(ca_housing_data$longitude)
+range(ca_housing_data$latitude)
+range(ca_housing_data$housing_median_age)
+range(ca_housing_data$total_rooms)
+range(ca_housing_data$total_bedrooms) #why? 
+range(ca_housing_data$population)
+range(ca_housing_data$households)
+range(ca_housing_data$median_income)
+range(ca_housing_data$median_house_value)
+table(ca_housing_data$ocean_proximity)
+```
+
+```{r}
+hist(ca_housing_data$longitude)
+hist(ca_housing_data$latitude)
+hist(ca_housing_data$housing_median_age)
+hist(ca_housing_data$total_rooms)
+hist(ca_housing_data$total_bedrooms)
+hist(ca_housing_data$population)
+hist(ca_housing_data$households)
+hist(ca_housing_data$median_income)
+hist(ca_housing_data$median_house_value)
+boxplot(ca_housing_data$ocean_proximity) #why? 
+```
+
+```{r}
+ggplot(data = ca_housing_data) + 
+  geom_point(mapping = aes(x = housing_median_age, y = median_house_value))
+```
 
 ## Data cleaning
--agreed/coordinate
--shared by 7/13
+
+```{r}
+set.seed(11)
+cah_trn_idx  = sample(nrow(ca_housing_data), size = trunc(0.80 * nrow(ca_housing_data)))
+cah_trn_data = ca_housing_data[cah_trn_idx, ]
+cah_tst_data = ca_housing_data[-cah_trn_idx, ]
+```
 
 ## Variable Creation
--shared 7/24
+```{r}
+epa_data$type = as.factor(epa_data$type)
+
+ca_housing_data$pop_per_hh = ca_housing_data$population / ca_housing_data$households
+ca_housing_data$rooms_per_hh = ca_housing_data$total_rooms / ca_housing_data$households
+ca_housing_data$bedrooms_per_hh = ca_housing_data$total_bedrooms / ca_housing_data$households
+```
+
+```{r}
+set.seed(11)
+
+cah_trn_idx = sample(1:nrow(ca_housing_data), length(ca_housing_data$median_house_value)*0.8)
+cah_trn = ca_housing_data[cah_trn_idx,]
+cah_tst = ca_housing_data[-cah_trn_idx, ]
+```
 
 ## Model Building
--shared 7/24
+```{r}
+mod = lm(log(median_house_value) ~ . - (total_bedrooms + total_rooms + households + rooms_per_hh +  latitude + population), data = cah_trn)
+summary(mod)
+vif(mod)
+mod_fix = lm(log(median_house_value) ~ . - (total_bedrooms + total_rooms + households + rooms_per_hh +  latitude + population), data = cah_trn, subset = cooks.distance(mod) <= 4 / length(cah_trn$median_house_value))
+
+```
+
+```{r}
+mod_fix = lm(log(median_house_value) ~ . - (total_bedrooms + total_rooms + households + rooms_per_hh +  latitude + population), data = cah_trn, subset = cooks.distance(mod) <= 4 / length(cah_trn$median_house_value))
+summary(mod_fix)
+```
+
+
+
+```{r}
+
+library(lmtest)
+
+diagnostics = function(model,
+                      pcol = "grey",
+                      lcol = "dodgerblue",
+                      alpha = 0.05,
+                      plotit = "TRUE",
+                      testit = "TRUE"){
+  
+  if(plotit){
+    par(mfrow = c(1, 2))
+    
+    plot(fitted(model), resid(model), col = pcol, pch = 20, xlab = "Fitted", ylab = "Residuals", main = "Residuals vs. Fitted")
+    abline(h = 0, col = lcol, lwd = 2)
+    
+    qqnorm(resid(model), main = "Normal Q-Q Plot", col = pcol)
+    qqline(resid(model), col = lcol, lwd = 2)
+  }
+  
+  if(testit){
+    p_val = shapiro.test(resid(model))$p.value
+    decision = ifelse(shapiro.test(resid(model))$p.value <= alpha, "Reject", "Fail to Reject")
+    list(p_val = p_val, decision = decision)
+  }
+}
+
+diagnostics(mod_fix, testit = FALSE)
+```
+
+
+```{r}
+mod_aic = step(mod, direction = "forward")
+summary(mod_aic)
+
+```
+
+
+```{r}
+y_hat_tst = predict(mod, newdata = cah_tst ) 
+sqrt(mean((y_hat_tst - cah_tst$median_house_value)^2, , na.rm = TRUE))
+
+```
 
 ## Model Selection
 - share 7/24
