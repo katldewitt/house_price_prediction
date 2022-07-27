@@ -3,10 +3,10 @@ title: "Stat 420 Final Project Work"
 author: "STAT 420, Summer 2022, D. Unger"
 date: ''
 output:
-  pdf_document: default
   html_document: 
     theme: readable
     toc: yes  
+  pdf_document: default
 urlcolor: cyan
 ---
 
