@@ -3,11 +3,13 @@ title: "Stat 420 Final Project - Modeling"
 author: "Shashank Thakur, Net ID: sthakur5"
 date: '27th July 2022'
 output:
-  pdf_document: default
   html_document: 
     theme: readable
     toc: yes  
+  pdf_document: default
 urlcolor: cyan
+editor_options: 
+  chunk_output_type: console
 ---
 
 # Modeling California Housing Project Data Set
@@ -19,6 +21,7 @@ options(scipen = 1, digits = 4, width = 80, fig.alin = "center")
 library(ggplot2)
 library(faraway)
 library(lmtest)
+library(knitr)
 ```
 
 
@@ -29,7 +32,51 @@ Read the data file to be used for this project.
 ca_housing_data = read.csv('../000_Data/california-housing-prices/housing.csv')
 # head(ca_housing_data)
 ```
+
+Initialize global variables.
+```{r}
+# build different models to test the performance
+n_models = 1
+# create a vector list of models to pass to various functions
+cahoudta_models = vector("list", length = n_models)
+cahoudta_model_names = vector("character", length = n_models)
+```
+
 ## Helper Functions
+
+**Function   : **`model_performance_metrics` will generate model performance metrics such as RMSE and R-squared
+
+**Inputs: **
+
+*models      : * A list of models to generate the performance metrics
+
+*model_names : * Names of the models passed to the function
+
+**Returns    : ** Returns a data frame with performance metrics as columns and a row for each model provided as input
+                  R2: R-squared
+                  RMSE: Root Mean Square Error
+                  Coefs: Total number of coefficients in the model
+```{r}
+model_performance_metrics = function(models, model_names){
+  # Calculate model names and total numbers
+  n_mod = length(models)
+  # Initialize the data frame to be be built by the function
+  perf_metrics_df = data.frame(
+    row.names = model_names,
+    "R2" = rep(0L, n_mod),
+    "RMSE" = rep(0L, n_mod),
+    "Coefs" = rep(0L, n_mod)
+  )
+  
+  for (idx in 1:n_mod){
+    perf_metrics_df[model_names[idx], "R2"] = summary(models[[idx]])$r.squared 
+    perf_metrics_df[model_names[idx], "RMSE"] = sqrt(mean(resid(models[[idx]]) ^ 2)) 
+    perf_metrics_df[model_names[idx], "Coefs"] = length(coef(models[[idx]]))
+  }
+  return(perf_metrics_df)
+}
+```
+
 
 ## Data cleaning
 
@@ -55,7 +102,6 @@ levels(ca_housing_data$ocean_proximity)
 ```
 
 
-
 ## Model Building
 
 Now that we have data cleaned, we will proceed with building a model. The very first step we will take is to divide data into train and test. Based on total number of observations we've, team has decided to use 70%-30% split for train-test data.
@@ -69,5 +115,43 @@ ca_housing_data.tr = ca_housing_data[cahoudta_trn_idx, ]
 ca_housing_data.te = ca_housing_data[-cahoudta_trn_idx, ]
 ```
 
+Next we will build models and start running tests.
+
+```{r}
+cahoudta_full_add_model = lm(log(median_house_value) ~ ., data = ca_housing_data.tr)
+# summary(cahoudta_full_add_model)
+```
+
+Checking if there is multi-collinearity in the full fitted additive model. Following code snippet outputs all the predictors which has high variation inflation factors.
+```{r}
+predictor_names = names(coef(cahoudta_full_add_model)[-1])
+predictor_names[vif(cahoudta_full_add_model) > 5]
+```
+
+Next we will create a full interaction model.
+
+```{r}
+predictor_variables = colnames(ca_housing_data.tr)[-which(colnames(ca_housing_data.tr) == "median_income")]
+full_int_pred = paste0("log(median_house_value) ~ ", paste(predictor_variables, collapse = " * "))
+cahoudta_full_int_model = lm(formula = full_int_pred, data = ca_housing_data.tr)
+# summary(cahoudta_full_int_model)
+```
+
+Test the performance metrics for the model(s).
+```{r}
+cahoudta_models[[1]] = cahoudta_full_add_model
+cahoudta_model_names[[1]] = "cahoudta_full_add_model"
+
+cahoudta_models[[2]] = cahoudta_full_int_model
+cahoudta_model_names[[2]] = "cahoudta_full_int_model"
+
+kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
+      col.names = c("R-Squared", "Root Mean Squared Error", "Number of Coefficients"),
+      caption = "Comparative Model Performance Metrics")
+
+```
+
 
 ## Model Selection
+
+Work in progress...
