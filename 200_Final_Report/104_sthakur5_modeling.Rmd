@@ -44,7 +44,7 @@ cahoudta_model_names = vector("character", length = n_models)
 
 ## Helper Functions
 
-**Function   : **`model_performance_metrics` will generate model performance metrics such as RMSE and R-squared
+**Function   : **`model_performance_metrics` will generate model performance metrics such as RMSE and R-squared, etc.
 
 **Inputs: **
 
@@ -52,7 +52,8 @@ cahoudta_model_names = vector("character", length = n_models)
 
 *model_names : * Names of the models passed to the function
 
-**Returns    : ** Returns a data frame with performance metrics as columns and a row for each model provided as input
+**Returns    : ** Returns a data frame with performance metrics as columns and a row for each model provided as input:
+
                   R2: R-squared
                   RMSE: Root Mean Square Error
                   Coefs: Total number of coefficients in the model

@@ -203,11 +203,14 @@ cahoudta_model_names = vector(&quot;character&quot;, length = n_models)</code></
 </div>
 <div id="helper-functions" class="section level2">
 <h2>Helper Functions</h2>
-<p><strong>Function : </strong><code>model_performance_metrics</code> will generate model performance metrics such as RMSE and R-squared</p>
+<p><strong>Function : </strong><code>model_performance_metrics</code> will generate model performance metrics such as RMSE and R-squared, etc.</p>
 <p><strong>Inputs: </strong></p>
 <p><em>models : </em> A list of models to generate the performance metrics</p>
 <p><em>model_names : </em> Names of the models passed to the function</p>
-<p><strong>Returns : </strong> Returns a data frame with performance metrics as columns and a row for each model provided as input R2: R-squared RMSE: Root Mean Square Error Coefs: Total number of coefficients in the model</p>
+<p><strong>Returns : </strong> Returns a data frame with performance metrics as columns and a row for each model provided as input:</p>
+<pre><code>              R2: R-squared
+              RMSE: Root Mean Square Error
+              Coefs: Total number of coefficients in the model</code></pre>
 <pre class="r"><code>model_performance_metrics = function(models, model_names){
   # Calculate model names and total numbers
   n_mod = length(models)
