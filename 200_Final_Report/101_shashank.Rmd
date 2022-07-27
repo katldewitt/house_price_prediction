@@ -1,112 +1,54 @@
 ---
-title: "Stat 420 Final Project Work - EDA"
-author: "Shashank Thakur, Net ID: sthakur5"
-date: '24th July 2022'
+title: "Stat 420 Final Project Work"
+author: "STAT 420, Summer 2022, D. Unger"
+date: ''
 output:
+  pdf_document: default
   html_document: 
     theme: readable
     toc: yes  
-  pdf_document: default
 urlcolor: cyan
 ---
 
-Set parameters and load any libraries to be used.
+# Analysis Workbook
+
+
 ```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
 options(scipen = 1, digits = 4, width = 80, fig.alin = "center")
 
 library(ggplot2)
-library(faraway)
 ```
 
-## Explorartory Data Analysis
+## Proposal
+7/10
 
-We will first read the data file to be used for this project.
-```{r read_data_file}
-ca_housing_data = read.csv('../000_Data/california-housing-prices/housing.csv')
-head(ca_housing_data)
-```
-Lets understand some of the high level summary of columns in the data set:
-```{r}
-str(ca_housing_data)
-```
+Everyone make own file for work. 
 
-Original data set has 20640 rows and 10 variables. 
+## Define Helper Functions
 
-If we omit any rows with missing data, what is the impact?
-```{r}
-str(na.omit(ca_housing_data))
-```
+## EDA
+-shared by 7/13
 
-After dropping any rows with any missing values we are left with 20433 observations a reduction of 203 observations or about 1%. 
+## Data cleaning
+-agreed/coordinate
+-shared by 7/13
 
-Next I would like to check the range of values for `median_house_value`:
+## Variable Creation
+-shared 7/24
 
-```{r}
-summary(ca_housing_data$median_house_value)
-var(ca_housing_data$median_house_value)
-```
+## Model Building
+-shared 7/24
 
-The `median_house_value` varies a lot from range 14K to 500K and has a very high variance. We may have to transform this variable before fitting.
+## Model Selection
+- share 7/24
+-coordinate 7/24
 
-Are any values missing for `median_house_value`?
+## Graphs and Tables  
+- coordinate 7/13
+-coordinate 7/24 
 
-```{r}
-anyNA(ca_housing_data$median_house_value)
-```
+## QA: How do we know what we did makes sense?.
 
-Good news is that none of values for `median_house_value` is missing.
-
-What are the unique values for `ocean_proximity` variable in our dataset?
-```{r}
-unique(ca_housing_data$ocean_proximity)
-is.factor(ca_housing_data$ocean_proximity)
-```
-
-The variable `ocean_proximity` has 5 unique *character* values and is not a factor variable. We may have to coerce this variable into factor variable and transform to a numeric levels to allow for proper modeling. 
-
-I am curious about the relative distribution of houses with respect to ocean proximity.
-```{r}
-barplot(table(ca_housing_data$ocean_proximity),
-        main = "Ocean Proximity of Houses",
-        col = "khaki",
-        border = "orangered",
-        ylim = c(0, 10000))
-```
-
-It seems there aren't many houses on island in our data set and it may be prudent to just drop that category all together from `ocean_proximity`.
-
-Lets check on distribution of `total_rooms`:
-```{r}
-hist(ca_housing_data$total_rooms,
-     main = "Histogram of Total Rooms",
-     xlab = "Total Rooms",
-     col = "yellow",
-     ylim = c(0, 10000))
-```
-
-`total_rooms` is highly skewed to right and may need some transformation to make is useful predictor.
-
-I would like to plot the `median_house_value` relative to the number of bedrooms and check if there is any trend in data?
-```{r}
-plot(median_house_value ~ total_bedrooms, data = ca_housing_data,
-     main = "Median House Value vs Total Bedrooms",
-     col = "sienna2",
-     cex = 1,
-     pch = 20,
-     xlab = "Total Bedrooms",
-     ylab = "Median House Price")
-```
-
-From the scatterplot it is evident that prices of house cannot be explained by the number of bedrooms. There seems be few outliers and may have to run additional diagnostics to figure out if it is problematic and needs to be addressed during modeling of data.
-
-Lets check the variance inflation factor in the variables. To process this I will fit a simple linear model with all variables and response `median_house_value`.
-```{r}
-simple_cahou_model = lm(median_house_value ~ ., data = ca_housing_data)
-vif(simple_cahou_model)
-```
-
-Following variable have a high VIF (> 5).
-```{r}
-names(vif(simple_cahou_model) > 5)
-```
-Based on sheer number of correlated predictors, we have to make some good decision while selecting predictors.
+## Move to final report
+August 2nd (remember to knit often!!)
+Report Due August 5th
