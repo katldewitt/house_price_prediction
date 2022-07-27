@@ -60,8 +60,13 @@ levels(ca_housing_data$ocean_proximity)
 
 Now that we have data cleaned, we will proceed with building a model. The very first step we will take is to divide data into train and test. Based on total number of observations we've, team has decided to use 70%-30% split for train-test data.
 ```{r}
-total_rows = nrow(ca_housing_data)
-
+set.seed(420072022)
+# Randomly select train indexes
+cahoudta_trn_idx = sample(nrow(ca_housing_data), 
+                          size = trunc(0.70 * nrow(ca_housing_data)))
+# Split into train and test data sets based on the index
+ca_housing_data.tr = ca_housing_data[cahoudta_trn_idx, ]
+ca_housing_data.te = ca_housing_data[-cahoudta_trn_idx, ]
 ```
 
 
