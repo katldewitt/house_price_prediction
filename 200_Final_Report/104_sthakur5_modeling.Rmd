@@ -1,0 +1,30 @@
+---
+title: "Stat 420 Final Project - Modeling"
+author: "Shashank Thakur, Net ID: sthakur5"
+date: '27th July 2022'
+output:
+  pdf_document: default
+  html_document: 
+    theme: readable
+    toc: yes  
+urlcolor: cyan
+---
+
+# Modeling California Housing Project Data Set
+
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+options(scipen = 1, digits = 4, width = 80, fig.alin = "center")
+
+library(ggplot2)
+```
+
+## Helper Functions
+
+## Data cleaning
+
+## Initialization
+
+## Model Building
+
+## Model Selection
