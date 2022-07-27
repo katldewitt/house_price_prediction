@@ -17,14 +17,52 @@ urlcolor: cyan
 options(scipen = 1, digits = 4, width = 80, fig.alin = "center")
 
 library(ggplot2)
+library(faraway)
+library(lmtest)
 ```
 
+
+## Initialization
+
+Read the data file to be used for this project.
+```{r read_data_file}
+ca_housing_data = read.csv('../000_Data/california-housing-prices/housing.csv')
+# head(ca_housing_data)
+```
 ## Helper Functions
 
 ## Data cleaning
 
-## Initialization
+During initial data analysis phase, we determined that some of the columns have high multicollinearity and we decided to drop those columns. One example of such column is `total_bedrooms` which not only has multicollinearity with `total_rooms` but also has some missing data. We will drop this column to allow for modeling **response** variable `median_house_value`.
+```{r}
+ca_housing_data = subset(ca_housing_data, select = -total_bedrooms)
+head(ca_housing_data)
+```
+We have another column `ocean_proximity` which is a categorical variable indicating how close the block is from ocean. 
+```{r}
+table(ca_housing_data$ocean_proximity)
+```
+As can be seen, this column has 5 different categories. The `ISLAND` category has only 5 observations. During initial analysis, our team determined that `ISLAND` has high leverage on the predicting response variable `median_house_value` which is problematic for our purpose. We will be dropping the rows from data set with `ISLAND` category and coercing the predictor `ocean_proximity` to be categorical.
+
+```{r}
+ca_housing_data = subset(ca_housing_data, 
+                         subset = !(ca_housing_data$ocean_proximity == "ISLAND"))
+table(ca_housing_data$ocean_proximity)
+# Coerce ocean_proximity to a factor variable
+ca_housing_data$ocean_proximity = as.factor(ca_housing_data$ocean_proximity)
+is.factor(ca_housing_data$ocean_proximity)
+levels(ca_housing_data$ocean_proximity)
+```
+
+
 
 ## Model Building
+
+Now that we have data cleaned, we will proceed with building a model. The very first step we will take is to divide data into train and test. Based on total number of observations we've, team has decided to use 70%-30% split for train-test data.
+```{r}
+total_rows = nrow(ca_housing_data)
+
+```
+
 
 ## Model Selection
