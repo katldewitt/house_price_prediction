@@ -109,4 +109,5 @@ Following variable have a high VIF (> 5).
 ```{r}
 names(vif(simple_cahou_model) > 5)
 ```
-Based on sheer number of correlated predictors, we have to make some good decision while selecting predictors.
+Based on sheer number of correlated predictors, we have to make some good decision while selecting predictors. 
+
