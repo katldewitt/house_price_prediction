@@ -219,12 +219,15 @@ cahoudta_model_names = vector(&quot;character&quot;, length = n_models)</code></
     row.names = model_names,
     &quot;R2&quot; = rep(0L, n_mod),
     &quot;RMSE&quot; = rep(0L, n_mod),
+    &quot;LOOCV_RMSE&quot; = rep(0L, n_mod),
     &quot;Coefs&quot; = rep(0L, n_mod)
   )
   
   for (idx in 1:n_mod){
     perf_metrics_df[model_names[idx], &quot;R2&quot;] = summary(models[[idx]])$r.squared 
     perf_metrics_df[model_names[idx], &quot;RMSE&quot;] = sqrt(mean(resid(models[[idx]]) ^ 2)) 
+    perf_metrics_df[model_names[idx], &quot;LOOCV_RMSE&quot;] = sqrt(mean((resid(models[[idx]]) / 
+                                                                   (1 - hatvalues(models[[idx]]))) ^ 2)) 
     perf_metrics_df[model_names[idx], &quot;Coefs&quot;] = length(coef(models[[idx]]))
   }
   return(perf_metrics_df)
@@ -298,7 +301,7 @@ cahoudta_models[[2]] = cahoudta_full_int_model
 cahoudta_model_names[[2]] = &quot;cahoudta_full_int_model&quot;
 
 kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
-      col.names = c(&quot;R-Squared&quot;, &quot;Root Mean Squared Error&quot;, &quot;Number of Coefficients&quot;),
+      col.names = c(&quot;R-Squared&quot;, &quot;RMSE&quot;, &quot;LOOCV RMSE&quot;, &quot;Coefficients&quot;),
       caption = &quot;Comparative Model Performance Metrics&quot;)</code></pre>
 <table>
 <caption>Comparative Model Performance Metrics</caption>
@@ -306,8 +309,9 @@ kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
 <tr class="header">
 <th align="left"></th>
 <th align="right">R-Squared</th>
-<th align="right">Root Mean Squared Error</th>
-<th align="right">Number of Coefficients</th>
+<th align="right">RMSE</th>
+<th align="right">LOOCV RMSE</th>
+<th align="right">Coefficients</th>
 </tr>
 </thead>
 <tbody>
@@ -315,12 +319,14 @@ kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
 <td align="left">cahoudta_full_add_model</td>
 <td align="right">0.6671</td>
 <td align="right">0.3290</td>
+<td align="right">0.3294</td>
 <td align="right">11</td>
 </tr>
 <tr class="even">
 <td align="left">cahoudta_full_int_model</td>
 <td align="right">0.9753</td>
 <td align="right">0.0897</td>
+<td align="right">0.3495</td>
 <td align="right">512</td>
 </tr>
 </tbody>

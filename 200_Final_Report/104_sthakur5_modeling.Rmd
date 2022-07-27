@@ -66,12 +66,15 @@ model_performance_metrics = function(models, model_names){
     row.names = model_names,
     "R2" = rep(0L, n_mod),
     "RMSE" = rep(0L, n_mod),
+    "LOOCV_RMSE" = rep(0L, n_mod),
     "Coefs" = rep(0L, n_mod)
   )
   
   for (idx in 1:n_mod){
     perf_metrics_df[model_names[idx], "R2"] = summary(models[[idx]])$r.squared 
     perf_metrics_df[model_names[idx], "RMSE"] = sqrt(mean(resid(models[[idx]]) ^ 2)) 
+    perf_metrics_df[model_names[idx], "LOOCV_RMSE"] = sqrt(mean((resid(models[[idx]]) / 
+                                                                   (1 - hatvalues(models[[idx]]))) ^ 2)) 
     perf_metrics_df[model_names[idx], "Coefs"] = length(coef(models[[idx]]))
   }
   return(perf_metrics_df)
@@ -147,7 +150,7 @@ cahoudta_models[[2]] = cahoudta_full_int_model
 cahoudta_model_names[[2]] = "cahoudta_full_int_model"
 
 kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
-      col.names = c("R-Squared", "Root Mean Squared Error", "Number of Coefficients"),
+      col.names = c("R-Squared", "RMSE", "LOOCV RMSE", "Coefficients"),
       caption = "Comparative Model Performance Metrics")
 
 ```
