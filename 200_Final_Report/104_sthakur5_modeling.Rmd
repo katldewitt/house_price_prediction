@@ -184,7 +184,8 @@ Based on pairs plot, for response variable `median_house_value`
 
 Lets drop the predictors `households` and `latitude` with high VIF.
 ```{r}
-predictor_variables = colnames(ca_housing_data.tr)[-which(colnames(ca_housing_data.tr) == "median_house_value")]
+predictor_variables = colnames(ca_housing_data.tr)[-which(colnames(ca_housing_data.tr)
+                                                          == "median_house_value")]
 drop_cols = which(colnames(ca_housing_data.tr) == "median_house_value" | 
                     colnames(ca_housing_data.tr) == "households" | 
                     colnames(ca_housing_data.tr) == "latitude")
@@ -199,7 +200,7 @@ less_preds_2int = paste0("log(median_house_value) ~ (", paste(smaller_predictors
 cahoudta_lowvif_2int_mod = lm(formula = less_preds_2int, data = ca_housing_data.tr)
 ```
 
-To increase complexity, lets try a degree 2 polynomial for reduced predictors based on vif above. Also we have to exclude the cateogorical predictor `ocean_proximity` from polynomial formula.
+To increase complexity, lets try a degree 2 polynomial for reduced predictors based on vif above. Also we have to exclude the categorical predictor `ocean_proximity` from polynomial formula.
 ```{r}
 drop_cols = which(colnames(ca_housing_data.tr) == "median_house_value" | 
                     colnames(ca_housing_data.tr) == "households" | 
