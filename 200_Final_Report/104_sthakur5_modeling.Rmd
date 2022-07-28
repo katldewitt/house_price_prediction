@@ -52,10 +52,13 @@ cahoudta_model_names = vector("character", length = n_models)
 
 *model_names : * Names of the models passed to the function
 
-**Returns    : ** Returns a data frame with performance metrics as columns and a row for each model provided as input:
+**Returns    : ** Returns a data frame with following performance metrics as columns and a row for each model 
+                  provided in `model_names` as input.
 
-                  R2: R-squared
+                  R2: R-Squared
+                  ADJR2: Adjusted R-Squared
                   RMSE: Root Mean Square Error
+                  LOOCV_RMSE: Leave One Out Cross Validated RMSE
                   Coefs: Total number of coefficients in the model
 ```{r}
 model_performance_metrics = function(models, model_names){
@@ -65,6 +68,7 @@ model_performance_metrics = function(models, model_names){
   perf_metrics_df = data.frame(
     row.names = model_names,
     "R2" = rep(0L, n_mod),
+    "ADJR2" = rep(0L, n_mod),
     "RMSE" = rep(0L, n_mod),
     "LOOCV_RMSE" = rep(0L, n_mod),
     "Coefs" = rep(0L, n_mod)
@@ -72,6 +76,7 @@ model_performance_metrics = function(models, model_names){
   
   for (idx in 1:n_mod){
     perf_metrics_df[model_names[idx], "R2"] = summary(models[[idx]])$r.squared 
+    perf_metrics_df[model_names[idx], "ADJR2"] = summary(models[[idx]])$adj.r.squared 
     perf_metrics_df[model_names[idx], "RMSE"] = sqrt(mean(resid(models[[idx]]) ^ 2)) 
     perf_metrics_df[model_names[idx], "LOOCV_RMSE"] = sqrt(mean((resid(models[[idx]]) / 
                                                                    (1 - hatvalues(models[[idx]]))) ^ 2)) 
@@ -150,7 +155,7 @@ cahoudta_models[[2]] = cahoudta_full_int_model
 cahoudta_model_names[[2]] = "cahoudta_full_int_model"
 
 kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
-      col.names = c("R-Squared", "RMSE", "LOOCV RMSE", "Coefficients"),
+      col.names = c("R-Squared", "Adjusted R-Squared", "RMSE", "LOOCV RMSE", "Coefficients"),
       caption = "Comparative Model Performance Metrics")
 
 ```
