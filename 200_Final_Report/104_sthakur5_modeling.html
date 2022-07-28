@@ -196,7 +196,7 @@ pre code {
 # head(ca_housing_data)</code></pre>
 <p>Initialize global variables.</p>
 <pre class="r"><code># build different models to test the performance
-n_models = 1
+n_models = 4
 # create a vector list of models to pass to various functions
 cahoudta_models = vector(&quot;list&quot;, length = n_models)
 cahoudta_model_names = vector(&quot;character&quot;, length = n_models)</code></pre>
@@ -284,7 +284,10 @@ cahoudta_trn_idx = sample(nrow(ca_housing_data),
                           size = trunc(0.70 * nrow(ca_housing_data)))
 # Split into train and test data sets based on the index
 ca_housing_data.tr = ca_housing_data[cahoudta_trn_idx, ]
-ca_housing_data.te = ca_housing_data[-cahoudta_trn_idx, ]</code></pre>
+ca_housing_data.te = ca_housing_data[-cahoudta_trn_idx, ]
+
+n_tr_rows = nrow(ca_housing_data.tr)
+n_te_rows = nrow(ca_housing_data.te)</code></pre>
 <p>Next we will build models and start running tests.</p>
 <pre class="r"><code>cahoudta_full_add_model = lm(log(median_house_value) ~ ., data = ca_housing_data.tr)
 # summary(cahoudta_full_add_model)</code></pre>
@@ -297,6 +300,16 @@ predictor_names[vif(cahoudta_full_add_model) &gt; 5]</code></pre>
 full_int_pred = paste0(&quot;log(median_house_value) ~ &quot;, paste(predictor_variables, collapse = &quot; * &quot;))
 cahoudta_full_int_model = lm(formula = full_int_pred, data = ca_housing_data.tr)
 # summary(cahoudta_full_int_model)</code></pre>
+<p>Lets try backward BIC search from the full additive model.</p>
+<pre class="r"><code>cahoudta_add_bckwd_bic_model = step(cahoudta_full_add_model, 
+                                    direction = &quot;backward&quot;,
+                                    k = log(n_tr_rows),
+                                    trace = 0)</code></pre>
+<p>Lets try backward BIC search from the full interaction model.</p>
+<pre class="r"><code>cahoudta_int_bckwd_bic_model = step(cahoudta_full_int_model, 
+                                    direction = &quot;backward&quot;,
+                                    k = log(n_tr_rows),
+                                    trace = 0)</code></pre>
 <p>Test the performance metrics for the model(s).</p>
 <pre class="r"><code>cahoudta_models[[1]] = cahoudta_full_add_model
 cahoudta_model_names[[1]] = &quot;cahoudta_full_add_model&quot;
@@ -304,8 +317,19 @@ cahoudta_model_names[[1]] = &quot;cahoudta_full_add_model&quot;
 cahoudta_models[[2]] = cahoudta_full_int_model
 cahoudta_model_names[[2]] = &quot;cahoudta_full_int_model&quot;
 
+cahoudta_models[[3]] = cahoudta_add_bckwd_bic_model
+cahoudta_model_names[[3]] = &quot;cahoudta_add_bckwd_bic_model&quot;
+
+cahoudta_models[[4]] = cahoudta_int_bckwd_bic_model
+cahoudta_model_names[[4]] = &quot;cahoudta_int_bckwd_bic_model&quot;
+
+
 kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
-      col.names = c(&quot;R-Squared&quot;, &quot;Adjusted R-Squared&quot;, &quot;RMSE&quot;, &quot;LOOCV RMSE&quot;, &quot;Coefficients&quot;),
+      col.names = c(&quot;R-Squared&quot;, 
+                    &quot;Adjusted R-Squared&quot;, 
+                    &quot;RMSE&quot;, 
+                    &quot;LOOCV RMSE&quot;, 
+                    &quot;Coefficients&quot;),
       caption = &quot;Comparative Model Performance Metrics&quot;)</code></pre>
 <table>
 <caption>Comparative Model Performance Metrics</caption>
@@ -330,6 +354,22 @@ kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
 </tr>
 <tr class="even">
 <td align="left">cahoudta_full_int_model</td>
+<td align="right">0.9753</td>
+<td align="right">0.9744</td>
+<td align="right">0.0897</td>
+<td align="right">0.3495</td>
+<td align="right">512</td>
+</tr>
+<tr class="odd">
+<td align="left">cahoudta_add_bckwd_bic_model</td>
+<td align="right">0.6671</td>
+<td align="right">0.6669</td>
+<td align="right">0.3290</td>
+<td align="right">0.3294</td>
+<td align="right">11</td>
+</tr>
+<tr class="even">
+<td align="left">cahoudta_int_bckwd_bic_model</td>
 <td align="right">0.9753</td>
 <td align="right">0.9744</td>
 <td align="right">0.0897</td>
