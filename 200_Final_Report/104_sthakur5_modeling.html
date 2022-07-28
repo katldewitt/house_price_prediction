@@ -263,7 +263,7 @@ head(ca_housing_data)</code></pre>
 ##       9136       6551          5       2290       2658</code></pre>
 <p>As can be seen, this column has 5 different categories. The <code>ISLAND</code> category has only 5 observations. During initial analysis, our team determined that <code>ISLAND</code> has high leverage on the predicting response variable <code>median_house_value</code> which is problematic for our purpose. We will be dropping the rows from data set with <code>ISLAND</code> category and coercing the predictor <code>ocean_proximity</code> to be categorical.</p>
 <pre class="r"><code>ca_housing_data = subset(ca_housing_data, 
-                         subset = !(ca_housing_data$ocean_proximity == &quot;ISLAND&quot;))
+                         subset = ca_housing_data$ocean_proximity != &quot;ISLAND&quot;)
 table(ca_housing_data$ocean_proximity)</code></pre>
 <pre><code>## 
 ##  &lt;1H OCEAN     INLAND   NEAR BAY NEAR OCEAN 

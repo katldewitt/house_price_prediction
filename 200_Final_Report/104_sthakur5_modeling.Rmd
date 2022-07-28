@@ -102,7 +102,7 @@ As can be seen, this column has 5 different categories. The `ISLAND` category ha
 
 ```{r}
 ca_housing_data = subset(ca_housing_data, 
-                         subset = !(ca_housing_data$ocean_proximity == "ISLAND"))
+                         subset = ca_housing_data$ocean_proximity != "ISLAND")
 table(ca_housing_data$ocean_proximity)
 # Coerce ocean_proximity to a factor variable
 ca_housing_data$ocean_proximity = as.factor(ca_housing_data$ocean_proximity)
