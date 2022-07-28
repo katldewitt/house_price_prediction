@@ -37,10 +37,12 @@ ca_housing_data = read.csv('housing.csv')
 Initialize global variables.
 ```{r}
 # build different models to test the performance
-n_models = 4
+n_models = 7
 # create a vector list of models to pass to various functions
 cahoudta_models = vector("list", length = n_models)
 cahoudta_model_names = vector("character", length = n_models)
+# Train-Test Split Ration
+tr_pct = 0.70
 ```
 
 ## Helper Functions
@@ -118,7 +120,7 @@ Now that we have data cleaned, we will proceed with building a model. The very f
 set.seed(420072022)
 # Randomly select train indexes
 cahoudta_trn_idx = sample(nrow(ca_housing_data), 
-                          size = trunc(0.70 * nrow(ca_housing_data)))
+                          size = trunc(tr_pct * nrow(ca_housing_data)))
 # Split into train and test data sets based on the index
 ca_housing_data.tr = ca_housing_data[cahoudta_trn_idx, ]
 ca_housing_data.te = ca_housing_data[-cahoudta_trn_idx, ]
@@ -136,9 +138,12 @@ cahoudta_full_add_model = lm(log(median_house_value) ~ ., data = ca_housing_data
 
 Checking if there is multi-collinearity in the full fitted additive model. Following code snippet outputs all the predictors which has high variation inflation factors.
 ```{r}
-predictor_names = names(coef(cahoudta_full_add_model)[-1])
-predictor_names[vif(cahoudta_full_add_model) > 5]
+high_vif_predictors = vif(cahoudta_full_add_model) > 5
+high_vif_pred_vals = vif(cahoudta_full_add_model)[high_vif_predictors]
+sort(high_vif_pred_vals)
 ```
+
+Based on variable inflation factors the predictors `households` and `latitude` can be dropped. 
 
 Lets try backward BIC search from the full additive model.
 ```{r}
@@ -161,6 +166,55 @@ cahoudta_2int_bckwd_bic_model = step(cahoudta_2int_add_model,
                                     trace = 0)
 ```
 
+We will run pairs plot to check any obvious trends in predictors compared to the response variable `median_house_value`.
+```{r fig.height=8, fig.width=12}
+pairs(subset(ca_housing_data.tr, 
+             select = -ocean_proximity), 
+      col = "orchid2")
+```
+
+Based on pairs plot, for response variable `median_house_value`
+
+- `median_income`, `households`, `total_rooms` has some polynomial relationship.
+
+- `housing_mdeian_age` has lot of variance and needs variable transformation.
+
+- Either one of `latitude` or `longitude` can be eliminated
+
+
+Lets drop the predictors `households` and `latitude` with high VIF.
+```{r}
+predictor_variables = colnames(ca_housing_data.tr)[-which(colnames(ca_housing_data.tr) == "median_house_value")]
+drop_cols = which(colnames(ca_housing_data.tr) == "median_house_value" | 
+                    colnames(ca_housing_data.tr) == "households" | 
+                    colnames(ca_housing_data.tr) == "latitude")
+smaller_predictors = colnames(ca_housing_data.tr)[-drop_cols]
+less_preds = paste0("log(median_house_value) ~ ", paste(smaller_predictors, collapse = " + "))
+cahoudta_lowvif_add_mod = lm(formula = less_preds, data = ca_housing_data.tr)
+```
+
+Lets add 2 way interaction for above model to check the performance.
+```{r}
+less_preds_2int = paste0("log(median_house_value) ~ (", paste(smaller_predictors, collapse = " + "), ") ^ 2")
+cahoudta_lowvif_2int_mod = lm(formula = less_preds_2int, data = ca_housing_data.tr)
+```
+
+To increase complexity, lets try a degree 2 polynomial for reduced predictors based on vif above. Also we have to exclude the cateogorical predictor `ocean_proximity` from polynomial formula.
+```{r}
+drop_cols = which(colnames(ca_housing_data.tr) == "median_house_value" | 
+                    colnames(ca_housing_data.tr) == "households" | 
+                    colnames(ca_housing_data.tr) == "latitude")
+reduced_predictors = colnames(ca_housing_data.tr)[-drop_cols]
+less_preds = paste0("log(median_house_value) ~ ", paste(smaller_predictors, collapse = " + "))
+further_reduced_predictors = reduced_predictors[-which(reduced_predictors == "ocean_proximity")]
+less_poly_preds = paste0(" + I(", paste(further_reduced_predictors, collapse = " ^ 2) + I("), " ^ 2)")
+poly_formula = paste0(less_preds, less_poly_preds)
+message("Polynomial Formula: ", poly_formula)
+cahoudta_lowvif_2poly_mod = lm(formula = poly_formula, data = ca_housing_data.tr)
+# summary(cahoudta_lowvif_2poly_mod)$coef
+```
+
+
 Test the performance metrics for the model(s).
 ```{r}
 cahoudta_models[[1]] = cahoudta_full_add_model
@@ -175,6 +229,14 @@ cahoudta_model_names[[3]] = "cahoudta_2int_add_model"
 cahoudta_models[[4]] = cahoudta_2int_bckwd_bic_model
 cahoudta_model_names[[4]] = "cahoudta_2int_bckwd_bic_model"
 
+cahoudta_models[[5]] = cahoudta_lowvif_add_mod
+cahoudta_model_names[[5]] = "cahoudta_lowvif_add_mod"
+
+cahoudta_models[[6]] = cahoudta_lowvif_2int_mod
+cahoudta_model_names[[6]] = "cahoudta_lowvif_2int_mod"
+
+cahoudta_models[[7]] = cahoudta_lowvif_2poly_mod
+cahoudta_model_names[[7]] = "cahoudta_lowvif_2poly_mod"
 
 kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
       col.names = c("R-Squared", 
@@ -186,25 +248,7 @@ kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
 
 ```
 
-TODO: Test by reducing number of train observations to 50%.
-
-TODO: Check by removing 1 - 2 high VIF predictors.
-
-TODO: Pairwise plot to eliminate additional predictors
-```{r}
-pairs(subset(ca_housing_data.tr, 
-             select = -ocean_proximity), 
-      col = "orchid2")
-```
-
-Based on pairs plot, for response variable `median_house_value`
-
-- `median_income`, `households`, `total_bedrooms` has some polynomial relationship.
-
-- `housing_mdeian_age` has lot of variance and needs variable transformation.
-
-- Either one of `latitude` or `longitude` can be eliminated
-
+As we can see from the results that the backward BIC search doesn't help in reducing number of beta parameters. Both the full model `cahoudta_full_add_model` and backward step wise search model `cahoudta_add_bckwd_bic_model` has same number of parameters i.e. 11. So we tried to reduce the train-test split to 50%-50%. Even after that the backward BIC search reduced only 1 parameter from 11 to 10 with very negligible loss in adjusted r-squared.
 
 
 ## Model Selection
