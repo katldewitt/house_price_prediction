@@ -10,9 +10,7 @@ output:
 urlcolor: cyan
 ---
 
-# Predicting House Price 
-
-//TODO: add finalized title
+# Modeling California Housing Prices
 
 ```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
 options(scipen = 1, digits = 4, width = 80, fig.alin = "center")
@@ -22,11 +20,47 @@ library(ggplot2)
 
 ## Introduction
 
+### Executive Summary
+
+In this report we will discuss the creation of a linear model to model median house value of a block group in CA in the 1990's based on administrative (Census) data. Given the recent turbulence in the real estate market and associated bidding wars, there is a renewed interest in what the value of a house is. Utilizing methods from STAT 420, we underwent model selection to identify the optimal model that minimized RMSE, met the assumptions of linear modelling, and had the fewest parameters to enhance explainability. The best linear model include the parameters <!TODO: add params from best linear model> and a test RMSE of <!TODO: add test RMSE>. Our model provides utility in explaining the relationship between how features of a California Block Group relate to the median house value of the block group.
+
+### The Data
+
+
+### The Data
+
+For our project we will be using the data set from kaggle [California Housing Prices](https://www.kaggle.com/datasets/camnugent/california-housing-prices). The data contains information from the 1990 California census and pertains to houses found in a given California district. It contains one row per census block group. A block group is the smallest geographical unit for which the U.S. Census Bureau publishes sample data (a block group typically has a population of 600 to 3,000 people).
+
+'California Housing Prices' data set pertains to the houses found in a given California district and some summary stats about them based on the 1990 census data. There are 10 columns and 20,640 rows in the data. The columns are as mentioned below: 
+
+| **Column Name**    	   | **Description**                                                                                   	|
+|------------------------|---------------------------------------------------------------------------------------------------	|
+| longitude          	   | Longitudinal location of block group of houses.                                                    |
+| latitude           	   | Latitudinal location of block group of houses                                                     	|
+| housing_median_age 	   | Median age of the houses in the block group                                                       	|
+| total_rooms        	   | Total rooms in the group of houses                                                                	|
+| total_bedrooms     	   | Total bedrooms in the block group                                                                 	|
+| population         	   | Total number of people in the block group                                                         	|
+| households         	   | Households comprised in the block group                                                           	|
+| median_income      	   | Median income calculated from the individual income of house.                                     	|
+| median_house_value 	   | Median house value of a block group.                                                              	|
+| ocean_proximity    	   | Indicating whether each block group is near the ocean, near the Bay Area, inland or on an island. 	|
+
+
+
+#### Limitations of the Data 
+
+In order to ensure the reader understands the caveats of working with our data, we will first underscore the differences between census housing data and typical sources of real estate data. The census data set, unlike scraped real estate data, is gathered by an administrative body, the Census. Since the stakeholder involved in collecting the data is not interested in selling a house, we see different features represented that relate more to geography (Latitude, longitude), population density (population, number of households), and age of the building (median_housing_age).The data set is aggregated at the block level (rather than at the house level). This means our analysis is not directly modelling housing values, but the median housing value of a neighborhood. We  believe this will help us better to understand the value of the neighborhood as opposed to the value of the amenities of the individual houses.
+
+Another important limitation of the source of this data is the date range. Since the data were gathered as part of the 1990 Census, we cannot extrapolate to current housing prices or utilize the model to explain what features are important to median house value at any other time period. For this particular reason, we focused our project on modelling rather than prediction. While there are few use cases for a prediction algorithm for median house value of a census block group in the 1990's at the present date, understanding historical features that related to a census block groups' price point provides an opportunity for understanding how median house price varied based on parameters at the time of data collection.
+
 ## Methods
 
 ## Results
 
 ## Discussion
+
+### Future Directions
 
 ## Appendix 
 
