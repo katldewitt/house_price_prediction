@@ -36,7 +36,7 @@ ca_housing_data = read.csv('../000_Data/california-housing-prices/housing.csv')
 Initialize global variables.
 ```{r}
 # build different models to test the performance
-n_models = 4
+n_models = 2
 # create a vector list of models to pass to various functions
 cahoudta_models = vector("list", length = n_models)
 cahoudta_model_names = vector("character", length = n_models)
@@ -140,14 +140,7 @@ predictor_names = names(coef(cahoudta_full_add_model)[-1])
 predictor_names[vif(cahoudta_full_add_model) > 5]
 ```
 
-Next we will create a full interaction model.
 
-```{r}
-predictor_variables = colnames(ca_housing_data.tr)[-which(colnames(ca_housing_data.tr) == "median_income")]
-full_int_pred = paste0("log(median_house_value) ~ ", paste(predictor_variables, collapse = " * "))
-cahoudta_full_int_model = lm(formula = full_int_pred, data = ca_housing_data.tr)
-# summary(cahoudta_full_int_model)
-```
 
 Lets try backward BIC search from the full additive model.
 ```{r}
@@ -158,13 +151,7 @@ cahoudta_add_bckwd_bic_model = step(cahoudta_full_add_model,
 ```
 
 
-Lets try backward BIC search from the full interaction model.
-```{r}
-cahoudta_int_bckwd_bic_model = step(cahoudta_full_int_model, 
-                                    direction = "backward",
-                                    k = log(n_tr_rows),
-                                    trace = 0)
-```
+
 
 
 Test the performance metrics for the model(s).
@@ -172,14 +159,9 @@ Test the performance metrics for the model(s).
 cahoudta_models[[1]] = cahoudta_full_add_model
 cahoudta_model_names[[1]] = "cahoudta_full_add_model"
 
-cahoudta_models[[2]] = cahoudta_full_int_model
-cahoudta_model_names[[2]] = "cahoudta_full_int_model"
+cahoudta_models[[2]] = cahoudta_add_bckwd_bic_model
+cahoudta_model_names[[2]] = "cahoudta_add_bckwd_bic_model"
 
-cahoudta_models[[3]] = cahoudta_add_bckwd_bic_model
-cahoudta_model_names[[3]] = "cahoudta_add_bckwd_bic_model"
-
-cahoudta_models[[4]] = cahoudta_int_bckwd_bic_model
-cahoudta_model_names[[4]] = "cahoudta_int_bckwd_bic_model"
 
 
 kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
