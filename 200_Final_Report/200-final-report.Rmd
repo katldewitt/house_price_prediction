@@ -16,6 +16,7 @@ urlcolor: cyan
 options(scipen = 1, digits = 4, width = 80, fig.alin = "center")
 
 library(ggplot2)
+library(sf)
 ```
 
 ## Introduction
@@ -26,10 +27,7 @@ In this report we will discuss the creation of a linear model to model median ho
 
 ### The Data
 
-
-### The Data
-
-For our project we will be using the data set from kaggle [California Housing Prices](https://www.kaggle.com/datasets/camnugent/california-housing-prices). The data contains information from the 1990 California census and pertains to houses found in a given California district. It contains one row per census block group. A block group is the smallest geographical unit for which the U.S. Census Bureau publishes sample data (a block group typically has a population of 600 to 3,000 people).
+For our project we leveraged a data set from kaggle [California Housing Prices](https://www.kaggle.com/datasets/camnugent/california-housing-prices). The data contains information from the 1990 California census and pertains to houses found in a given California district. It contains one row per census block group. A block group is the smallest geographical unit for which the U.S. Census Bureau publishes sample data (a block group typically has a population of 600 to 3,000 people).
 
 'California Housing Prices' data set pertains to the houses found in a given California district and some summary stats about them based on the 1990 census data. There are 10 columns and 20,640 rows in the data. The columns are as mentioned below: 
 
@@ -46,6 +44,41 @@ For our project we will be using the data set from kaggle [California Housing Pr
 | median_house_value 	   | Median house value of a block group.                                                              	|
 | ocean_proximity    	   | Indicating whether each block group is near the ocean, near the Bay Area, inland or on an island. 	|
 
+
+TODO: Discuss plots of median house value
+
+```{r}
+
+#read in the data
+
+read_in <- function(){
+  ca_housing_data = read.csv('../000_Data/california-housing-prices/housing.csv')
+  #turn ocean_proximity to factor
+  ca_housing_data$ocean_proximity <- as.factor(ca_housing_data$ocean_proximity)
+  
+  ca_housing_data
+}
+
+ca_housing_data <- read_in()
+
+## Map the data
+#Source: https://stackoverflow.com/questions/65233613/plot-a-map-using-lat-and-long-with-r
+my_sf <- st_as_sf(ca_housing_data, coords = c('longitude', 'latitude'))
+my_sf <- st_set_crs(my_sf, value = 4326)
+
+ggplot(my_sf) + 
+  geom_sf(aes(color = ocean_proximity)) +
+              labs( y = "Longitude", 
+                    x = "Latitude",
+                    title = "Graphic Of Median House Value by Ocean Proximity")
+
+ggplot(my_sf) + 
+  geom_sf(aes(color = median_house_value)) +
+              labs( y = "Longitude", 
+                    x = "Latitude",
+                    title = "Graphic Of Median House Value by Location")
+
+```
 
 
 #### Limitations of the Data 
