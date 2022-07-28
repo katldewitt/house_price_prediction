@@ -29,7 +29,8 @@ library(knitr)
 
 Read the data file to be used for this project.
 ```{r read_data_file}
-ca_housing_data = read.csv('../000_Data/california-housing-prices/housing.csv')
+setwd("/Users/srthakur/Documents/GitHub/house_price_prediction/200_Final_Report")
+ca_housing_data = read.csv('housing.csv')
 # head(ca_housing_data)
 ```
 
@@ -110,7 +111,6 @@ is.factor(ca_housing_data$ocean_proximity)
 levels(ca_housing_data$ocean_proximity)
 ```
 
-
 ## Model Building
 
 Now that we have data cleaned, we will proceed with building a model. The very first step we will take is to divide data into train and test. Based on total number of observations we've, team has decided to use 70%-30% split for train-test data.
@@ -185,6 +185,26 @@ kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
       caption = "Comparative Model Performance Metrics")
 
 ```
+
+TODO: Test by reducing number of train observations to 50%.
+
+TODO: Check by removing 1 - 2 high VIF predictors.
+
+TODO: Pairwise plot to eliminate additional predictors
+```{r}
+pairs(subset(ca_housing_data.tr, 
+             select = -ocean_proximity), 
+      col = "orchid2")
+```
+
+Based on pairs plot, for response variable `median_house_value`
+
+- `median_income`, `households`, `total_bedrooms` has some polynomial relationship.
+
+- `housing_mdeian_age` has lot of variance and needs variable transformation.
+
+- Either one of `latitude` or `longitude` can be eliminated
+
 
 
 ## Model Selection
