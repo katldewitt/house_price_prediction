@@ -196,7 +196,7 @@ pre code {
 # head(ca_housing_data)</code></pre>
 <p>Initialize global variables.</p>
 <pre class="r"><code># build different models to test the performance
-n_models = 2
+n_models = 4
 # create a vector list of models to pass to various functions
 cahoudta_models = vector(&quot;list&quot;, length = n_models)
 cahoudta_model_names = vector(&quot;character&quot;, length = n_models)</code></pre>
@@ -300,6 +300,13 @@ predictor_names[vif(cahoudta_full_add_model) &gt; 5]</code></pre>
                                     direction = &quot;backward&quot;,
                                     k = log(n_tr_rows),
                                     trace = 0)</code></pre>
+<p>Lets try two way interaction full additive model.</p>
+<pre class="r"><code>cahoudta_2int_add_model = lm(log(median_house_value) ~ . ^ 2, data = ca_housing_data.tr)</code></pre>
+<p>Lets try backward BIC search from two way interaction full additive model.</p>
+<pre class="r"><code>cahoudta_2int_bckwd_bic_model = step(cahoudta_2int_add_model, 
+                                    direction = &quot;backward&quot;,
+                                    k = log(n_tr_rows),
+                                    trace = 0)</code></pre>
 <p>Test the performance metrics for the model(s).</p>
 <pre class="r"><code>cahoudta_models[[1]] = cahoudta_full_add_model
 cahoudta_model_names[[1]] = &quot;cahoudta_full_add_model&quot;
@@ -307,6 +314,11 @@ cahoudta_model_names[[1]] = &quot;cahoudta_full_add_model&quot;
 cahoudta_models[[2]] = cahoudta_add_bckwd_bic_model
 cahoudta_model_names[[2]] = &quot;cahoudta_add_bckwd_bic_model&quot;
 
+cahoudta_models[[3]] = cahoudta_2int_add_model
+cahoudta_model_names[[3]] = &quot;cahoudta_2int_add_model&quot;
+
+cahoudta_models[[4]] = cahoudta_2int_bckwd_bic_model
+cahoudta_model_names[[4]] = &quot;cahoudta_2int_bckwd_bic_model&quot;
 
 
 kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
@@ -333,7 +345,7 @@ kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
 <td align="left">cahoudta_full_add_model</td>
 <td align="right">0.6671</td>
 <td align="right">0.6669</td>
-<td align="right">0.329</td>
+<td align="right">0.3290</td>
 <td align="right">0.3294</td>
 <td align="right">11</td>
 </tr>
@@ -341,9 +353,25 @@ kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
 <td align="left">cahoudta_add_bckwd_bic_model</td>
 <td align="right">0.6671</td>
 <td align="right">0.6669</td>
-<td align="right">0.329</td>
+<td align="right">0.3290</td>
 <td align="right">0.3294</td>
 <td align="right">11</td>
+</tr>
+<tr class="odd">
+<td align="left">cahoudta_2int_add_model</td>
+<td align="right">0.7161</td>
+<td align="right">0.7150</td>
+<td align="right">0.3038</td>
+<td align="right">0.3069</td>
+<td align="right">53</td>
+</tr>
+<tr class="even">
+<td align="left">cahoudta_2int_bckwd_bic_model</td>
+<td align="right">0.7152</td>
+<td align="right">0.7144</td>
+<td align="right">0.3043</td>
+<td align="right">0.3065</td>
+<td align="right">44</td>
 </tr>
 </tbody>
 </table>

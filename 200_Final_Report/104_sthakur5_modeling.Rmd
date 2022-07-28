@@ -36,7 +36,7 @@ ca_housing_data = read.csv('../000_Data/california-housing-prices/housing.csv')
 Initialize global variables.
 ```{r}
 # build different models to test the performance
-n_models = 2
+n_models = 4
 # create a vector list of models to pass to various functions
 cahoudta_models = vector("list", length = n_models)
 cahoudta_model_names = vector("character", length = n_models)
@@ -140,8 +140,6 @@ predictor_names = names(coef(cahoudta_full_add_model)[-1])
 predictor_names[vif(cahoudta_full_add_model) > 5]
 ```
 
-
-
 Lets try backward BIC search from the full additive model.
 ```{r}
 cahoudta_add_bckwd_bic_model = step(cahoudta_full_add_model, 
@@ -150,9 +148,18 @@ cahoudta_add_bckwd_bic_model = step(cahoudta_full_add_model,
                                     trace = 0)
 ```
 
+Lets try two way interaction full additive model.
+```{r}
+cahoudta_2int_add_model = lm(log(median_house_value) ~ . ^ 2, data = ca_housing_data.tr)
+```
 
-
-
+Lets try backward BIC search from two way interaction full additive model.
+```{r}
+cahoudta_2int_bckwd_bic_model = step(cahoudta_2int_add_model, 
+                                    direction = "backward",
+                                    k = log(n_tr_rows),
+                                    trace = 0)
+```
 
 Test the performance metrics for the model(s).
 ```{r}
@@ -162,6 +169,11 @@ cahoudta_model_names[[1]] = "cahoudta_full_add_model"
 cahoudta_models[[2]] = cahoudta_add_bckwd_bic_model
 cahoudta_model_names[[2]] = "cahoudta_add_bckwd_bic_model"
 
+cahoudta_models[[3]] = cahoudta_2int_add_model
+cahoudta_model_names[[3]] = "cahoudta_2int_add_model"
+
+cahoudta_models[[4]] = cahoudta_2int_bckwd_bic_model
+cahoudta_model_names[[4]] = "cahoudta_2int_bckwd_bic_model"
 
 
 kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
