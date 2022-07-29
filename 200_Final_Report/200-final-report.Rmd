@@ -110,8 +110,6 @@ Our first step to cleaning the data was reading in the CSV file from kaggle.com.
 #read in the data
 read_in <- function(){
   ca_housing_data = read.csv('../000_Data/california-housing-prices/housing.csv')
-  #turn ocean_proximity to factor
-  
   ca_housing_data
 }
 
