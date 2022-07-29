@@ -1,12 +1,12 @@
 ---
-title: "Stat 420 Final Project Proposal"
-author: "STAT 420, Summer 2022, D. Unger"
+title: "STAT 420 Final Report: Modeling California Housing Prices"
+author: "Shashank Thakur, Avinash Tiwari, Kathryn DeWitt"
 date: ''
 output:
-  pdf_document: default
   html_document: 
     theme: readable
     toc: yes  
+  pdf_document: default
 urlcolor: cyan
 ---
 
@@ -29,7 +29,7 @@ In this report we will discuss the creation of a linear model to model median ho
 
 For our project we leveraged a data set from kaggle [California Housing Prices](https://www.kaggle.com/datasets/camnugent/california-housing-prices). The data contains information from the 1990 California census and pertains to houses found in a given California district. It contains one row per census block group. A block group is the smallest geographical unit for which the U.S. Census Bureau publishes sample data (a block group typically has a population of 600 to 3,000 people).
 
-'California Housing Prices' data set pertains to the houses found in a given California district and some summary stats about them based on the 1990 census data. There are 10 columns and 20,640 rows in the data. The columns are as mentioned below: 
+The *California Housing Prices* data set pertains to the houses found in a given California district and some summary stats about them based on the 1990 census data. There are 10 columns and 20,640 rows in the data. The columns are as mentioned below: 
 
 | **Column Name**    	   | **Description**                                                                                   	|
 |------------------------|---------------------------------------------------------------------------------------------------	|
@@ -45,10 +45,7 @@ For our project we leveraged a data set from kaggle [California Housing Prices](
 | ocean_proximity    	   | Indicating whether each block group is near the ocean, near the Bay Area, inland or on an island. 	|
 
 
-
-
-
-#### Limitations of the Data 
+### Limitations of the Data 
 
 In order to ensure the reader understands the caveats of working with our data, we will first underscore the differences between census housing data and typical sources of real estate data. The census data set, unlike scraped real estate data, is gathered by an administrative body, the Census. Since the stakeholder involved in collecting the data is not interested in selling a house, we see different features represented that relate more to geography (Latitude, longitude), population density (population, number of households), and age of the building (median_housing_age).The data set is aggregated at the block level (rather than at the house level). This means our analysis is not directly modelling housing values, but the median housing value of a neighborhood. We  believe this will help us better to understand the value of the neighborhood as opposed to the value of the amenities of the individual houses.
 
@@ -132,7 +129,8 @@ At this point, we have concluded the prerequisite data cleaning and can move ont
 Now that we have data cleaned, we will proceed with building a model. The very first step we will take is to divide data into train and test. Based on total number of observations we've, team has decided to use 70%-30% split for train-test data.
 
 
-Initialize global variables.
+We first initialized global variables and created helper functions.
+
 ```{r}
 # build different models to test the performance
 n_models = 7
@@ -143,7 +141,7 @@ cahoudta_model_names = vector("character", length = n_models)
 tr_pct = 0.70
 ```
 
-## Helper Functions
+### Helper Functions
 
 **Function   : **`model_performance_metrics` will generate model performance metrics such as RMSE and R-squared, etc.
 
@@ -161,6 +159,7 @@ tr_pct = 0.70
                   RMSE: Root Mean Square Error
                   LOOCV_RMSE: Leave One Out Cross Validated RMSE
                   Coefs: Total number of coefficients in the model
+                  
 ```{r}
 model_performance_metrics = function(models, model_names){
   # Calculate model names and total numbers
@@ -201,7 +200,7 @@ n_te_rows = nrow(ca_housing_data.te)
 ```
 
 
-<!TODO: add more about data cleaning!>
+<!TODO: add more about model selection!>
 
 ## Results
 
@@ -220,11 +219,13 @@ n_te_rows = nrow(ca_housing_data.te)
 ### Authors
 
 Team Member's Names: 
- - Kathryn DeWitt
- - Shashank Thakur
- - Avinash Tiwari
+
+- Kathryn DeWitt
+- Shashank Thakur
+- Avinash Tiwari
 
 NetIDs: 
- - kdewitt3
- - sthakur5
- - tiwari6
+
+- kdewitt3
+- sthakur5
+- tiwari6
