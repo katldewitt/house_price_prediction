@@ -89,6 +89,35 @@ model_performance_metrics = function(models, model_names){
 }
 ```
 
+**Function: ** `models_RMSE_by_data` to calculate root mean square for input data on the model
+
+**Input:** 
+
+*models      :* A list of fitted model passed as a parameter.
+
+*model_names : * Names of the models passed to the function
+
+*data        :* The actual data which will be used to calculate predicted values and RMSE for each model
+
+**Returns:** The function will a data frame with value of RMSE on input data for each model in list
+```{r}
+models_RMSE_by_data = function(models, model_names, data){
+  # Calculate model names and total number of models
+  n_mod = length(models)
+  # Initialize the data frame to be be built by the function
+  RMSE_df = data.frame(
+    row.names = model_names,
+    "RMSE" = rep(0L, n_mod)
+  )
+  y_i = data[["median_house_value"]]
+  for (idx in 1:n_mod){
+    y_hat = exp(predict(models[[idx]], newdata = data))
+    RMSE_df[idx, "RMSE"] = sqrt(mean((y_i - y_hat) ^ 2))
+  }
+  return(RMSE_df)
+}
+```
+
 
 ## Data cleaning
 
@@ -239,6 +268,7 @@ cahoudta_model_names[[6]] = "cahoudta_lowvif_2int_mod"
 cahoudta_models[[7]] = cahoudta_lowvif_2poly_mod
 cahoudta_model_names[[7]] = "cahoudta_lowvif_2poly_mod"
 
+# Model performance on train data
 kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
       col.names = c("R-Squared", 
                     "Adjusted R-Squared", 
@@ -247,6 +277,12 @@ kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
                     "Coefficients"),
       caption = "Comparative Model Performance Metrics")
 
+# Test RMSE
+kable(models_RMSE_by_data(cahoudta_models, 
+                          cahoudta_model_names, 
+                          ca_housing_data.te),
+      col.names = c("Test RMSE"),
+      caption = "Test Root Mean Square Error for Each Model")
 ```
 
 As we can see from the results that the backward BIC search doesn't help in reducing number of beta parameters. Both the full model `cahoudta_full_add_model` and backward step wise search model `cahoudta_add_bckwd_bic_model` has same number of parameters i.e. 11. So we tried to reduce the train-test split to 50%-50%. Even after that the backward BIC search reduced only 1 parameter from 11 to 10 with very negligible loss in adjusted r-squared.
