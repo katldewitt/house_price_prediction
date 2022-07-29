@@ -23,7 +23,7 @@ library(sf)
 
 ### Executive Summary
 
-In this report we will discuss the creation of a linear model to model median house value of a block group in CA in the 1990's based on administrative (Census) data. Given the recent turbulence in the real estate market and associated bidding wars, there is a renewed interest in what the value of a house is. Utilizing methods from STAT 420, we underwent model selection to identify the optimal model that minimized RMSE, met the assumptions of linear modelling, and had the fewest parameters to enhance explainability. The best linear model include the parameters <!TODO: add params from best linear model> and a test RMSE of <!TODO: add test RMSE>. Our model provides utility in explaining the relationship between how features of a California Block Group relate to the median house value of the block group.
+In this report we will discuss the creation of a linear model to model median house value of a block group in California (CA) in the 1990's based on administrative (Census) data. Given the recent turbulence in the real estate market and associated bidding wars, there is a renewed interest in what the value of a house is. Utilizing methods from STAT 420, we underwent model selection to identify the optimal model that minimized RMSE, met the assumptions of linear modelling, and had the fewest parameters to enhance explainability. The best linear model include the parameters <!TODO: add params from best linear model> and a test RMSE of <!TODO: add test RMSE>. Our model provides utility in explaining the relationship between how features of a California Block Group relate to the median house value of the block group.
 
 ### The Data
 
@@ -45,16 +45,29 @@ For our project we leveraged a data set from kaggle [California Housing Prices](
 | ocean_proximity    	   | Indicating whether each block group is near the ocean, near the Bay Area, inland or on an island. 	|
 
 
-TODO: Discuss plots of median house value
+
+
+
+#### Limitations of the Data 
+
+In order to ensure the reader understands the caveats of working with our data, we will first underscore the differences between census housing data and typical sources of real estate data. The census data set, unlike scraped real estate data, is gathered by an administrative body, the Census. Since the stakeholder involved in collecting the data is not interested in selling a house, we see different features represented that relate more to geography (Latitude, longitude), population density (population, number of households), and age of the building (median_housing_age).The data set is aggregated at the block level (rather than at the house level). This means our analysis is not directly modelling housing values, but the median housing value of a neighborhood. We  believe this will help us better to understand the value of the neighborhood as opposed to the value of the amenities of the individual houses.
+
+Another important limitation of the source of this data is the date range. Since the data were gathered as part of the 1990 Census, we cannot extrapolate to current housing prices or utilize the model to explain what features are important to median house value at any other time period. For this particular reason, we focused our project on modelling rather than prediction. While there are few use cases for a prediction algorithm for median house value of a census block group in the 1990's at the present date, understanding historical features that related to a census block groups' price point provides an opportunity for understanding how median house price varied based on parameters at the time of data collection.
+
+## Methods
+
+We will now discuss the steps we used to generate our linear model. We began by conducting exploratory data analysis (EDA). Based on the EDA, we identified steps necessary to clean our data. In order to ensure our model was not overfit, we split the data set into a 70-30 train-test split. Next we underwent model selection process to minimize the RMSE of our model. 
+
+### Data Cleaning
+
+As part of data cleaning, we plotted the `median_house_value` against latitude and longitude to visualize the locations of the different houses. One of the first things we noticed were two distinct clusters of highly priced houses that appear to correspond to Los Angeles and the San Francisco Bay Area.
 
 ```{r}
-
 #read in the data
 
 read_in <- function(){
   ca_housing_data = read.csv('../000_Data/california-housing-prices/housing.csv')
   #turn ocean_proximity to factor
-  ca_housing_data$ocean_proximity <- as.factor(ca_housing_data$ocean_proximity)
   
   ca_housing_data
 }
@@ -67,33 +80,84 @@ my_sf <- st_as_sf(ca_housing_data, coords = c('longitude', 'latitude'))
 my_sf <- st_set_crs(my_sf, value = 4326)
 
 ggplot(my_sf) + 
-  geom_sf(aes(color = ocean_proximity)) +
-              labs( y = "Longitude", 
-                    x = "Latitude",
-                    title = "Graphic Of Median House Value by Ocean Proximity")
-
-ggplot(my_sf) + 
   geom_sf(aes(color = median_house_value)) +
               labs( y = "Longitude", 
                     x = "Latitude",
                     title = "Graphic Of Median House Value by Location")
+```
+
+The next thing we we looked at were basic summary statistics and missingness. We found that there were 207 observation missing `total_bedrooms`. We cannot generate a linear model with missing data. However, looking at the colinearity, we will find a solution that allows us to keep these observations.
+
+```{r}
+summary(ca_housing_data)
+
+#How many missing values do we have?
+colSums(is.na(ca_housing_data))
+```
+
+In addition to looks at graphs and summary statistics, we also began to identify variables with colinearty issues via a correlation matrix and pairwise plot. In the pairwise plot we see that `total_bedrooms` is highly colinear with `total_rooms`, but total_rooms is not missing any values. With this in mind, we can utilize the variable `total_rooms` to preserve the 207 observations. 
+
+```{r}
+## pairs & Cor matrix
+numeric_vals <- unlist(lapply(ca_housing_data, is.numeric), use.names = FALSE)  
+pairs(ca_housing_data[,numeric_vals], col="red")
+round(cor(ca_housing_data[,numeric_vals]), 2)
+#Population and households are colinear
+#Population and Total rooms are also colinear
+#latitude and longitude are also highly correlated
 
 ```
 
+We have another column `ocean_proximity` which is a categorical variable indicating how close the block is from ocean. As can be seen, this column has 5 different categories. The `ISLAND` category has only 5 observations. During initial analysis, our team determined that `ISLAND` has high leverage on the predicting response variable `median_house_value` which is problematic for our purpose. We will be dropping the rows from data set with `ISLAND` category and coercing the predictor `ocean_proximity` to be categorical.
 
-#### Limitations of the Data 
+```{r}
+#Ocean proximity - only 5 in island, and substantially different. I propose removing from consideration to avoid overfitting
+table(ca_housing_data$ocean_proximity) 
+boxplot(median_house_value ~ ocean_proximity, 
+        ca_housing_data,
+        main = "Boxplot of Median House Value by Ocean Proximity",
+        ylab = "Median House value in USD",
+        xlab = "Ocean Proximity")
 
-In order to ensure the reader understands the caveats of working with our data, we will first underscore the differences between census housing data and typical sources of real estate data. The census data set, unlike scraped real estate data, is gathered by an administrative body, the Census. Since the stakeholder involved in collecting the data is not interested in selling a house, we see different features represented that relate more to geography (Latitude, longitude), population density (population, number of households), and age of the building (median_housing_age).The data set is aggregated at the block level (rather than at the house level). This means our analysis is not directly modelling housing values, but the median housing value of a neighborhood. We  believe this will help us better to understand the value of the neighborhood as opposed to the value of the amenities of the individual houses.
+#Remove the islands rows
+ca_housing_data = ca_housing_data[ca_housing_data$ocean_proximity != "ISLAND",]
 
-Another important limitation of the source of this data is the date range. Since the data were gathered as part of the 1990 Census, we cannot extrapolate to current housing prices or utilize the model to explain what features are important to median house value at any other time period. For this particular reason, we focused our project on modelling rather than prediction. While there are few use cases for a prediction algorithm for median house value of a census block group in the 1990's at the present date, understanding historical features that related to a census block groups' price point provides an opportunity for understanding how median house price varied based on parameters at the time of data collection.
+#Now we turn it into a factor after dropping that level
+ca_housing_data$ocean_proximity <- as.factor(ca_housing_data$ocean_proximity)
+```
+At this point, we have concluded the prerequisite data cleaning and can move onto model selection. 
 
-## Methods
+### Model Selection Procss
+
+
+Now that we have data cleaned, we will proceed with building a model. The very first step we will take is to divide data into train and test. Based on total number of observations we've, team has decided to use 70%-30% split for train-test data.
+```{r}
+set.seed(420072022)
+# Randomly select train indexes
+cahoudta_trn_idx = sample(nrow(ca_housing_data), 
+                          size = trunc(tr_pct * nrow(ca_housing_data)))
+# Split into train and test data sets based on the index
+ca_housing_data.tr = ca_housing_data[cahoudta_trn_idx, ]
+ca_housing_data.te = ca_housing_data[-cahoudta_trn_idx, ]
+
+n_tr_rows = nrow(ca_housing_data.tr)
+n_te_rows = nrow(ca_housing_data.te)
+```
+
+
+<!TODO: add more about data cleaning!>
 
 ## Results
 
+### Chosen Model
+
 ## Discussion
 
-### Future Directions
+### Utility of Model
+
+> section should contain discussion of your results and should frame your results in the context of the data. How is your final model useful?
+
+### Future Directions and Lessons Learned
 
 ## Appendix 
 
