@@ -210,55 +210,47 @@ tr_pct = 0.70</code></pre>
 <p><strong>Inputs: </strong></p>
 <p><em>models : </em> A list of models to generate the performance metrics</p>
 <p><em>model_names : </em> Names of the models passed to the function</p>
-<p><strong>Returns : </strong> Returns a data frame with following performance metrics as columns and a row for each model provided in <code>model_names</code> as input.</p>
-<pre><code>              R2: R-Squared
-              ADJR2: Adjusted R-Squared
-              RMSE: Root Mean Square Error
-              LOOCV_RMSE: Leave One Out Cross Validated RMSE
-              Coefs: Total number of coefficients in the model</code></pre>
-<pre class="r"><code>model_performance_metrics = function(models, model_names){
+<p><em>data :</em> The actual data which will be used to calculate predicted values and RMSE for each model</p>
+<p><strong>Output : </strong> Table with following performance metrics as columns and a row for each model provided in <code>model_names</code> as input.</p>
+<pre><code>              Adjusted R-Squared
+              Root Mean Square Error on Training Data
+              Root Mean Square Error on Test Data
+              Leave One Out Cross Validated RMSE
+              Total number of coefficients in the model</code></pre>
+<pre class="r"><code>model_performance_metrics = function(models, model_names, data){
   # Calculate model names and total numbers
   n_mod = length(models)
   # Initialize the data frame to be be built by the function
   perf_metrics_df = data.frame(
     row.names = model_names,
-    &quot;R2&quot; = rep(0L, n_mod),
     &quot;ADJR2&quot; = rep(0L, n_mod),
-    &quot;RMSE&quot; = rep(0L, n_mod),
+    &quot;Train.RMSE&quot; = rep(0L, n_mod),
+    &quot;Test.RMSE&quot;  = rep(0L, n_mod),
     &quot;LOOCV_RMSE&quot; = rep(0L, n_mod),
     &quot;Coefs&quot; = rep(0L, n_mod)
   )
+  # Extract actual response values
+  y_i = log(data[[&quot;median_house_value&quot;]])
   
   for (idx in 1:n_mod){
-    perf_metrics_df[model_names[idx], &quot;R2&quot;] = summary(models[[idx]])$r.squared 
     perf_metrics_df[model_names[idx], &quot;ADJR2&quot;] = summary(models[[idx]])$adj.r.squared 
-    perf_metrics_df[model_names[idx], &quot;RMSE&quot;] = sqrt(mean(resid(models[[idx]]) ^ 2)) 
+    perf_metrics_df[model_names[idx], &quot;Train.RMSE&quot;] = sqrt(mean(resid(models[[idx]]) ^ 2)) 
+    y_hat = predict(models[[idx]], newdata = data)
+    perf_metrics_df[idx, &quot;Test.RMSE&quot;] = sqrt(mean((y_i - y_hat) ^ 2))    
     perf_metrics_df[model_names[idx], &quot;LOOCV_RMSE&quot;] = sqrt(mean((resid(models[[idx]]) / 
                                                                    (1 - hatvalues(models[[idx]]))) ^ 2)) 
     perf_metrics_df[model_names[idx], &quot;Coefs&quot;] = length(coef(models[[idx]]))
   }
-  return(perf_metrics_df)
-}</code></pre>
-<p><strong>Function: </strong> <code>models_RMSE_by_data</code> to calculate root mean square for input data on the model</p>
-<p><strong>Input:</strong></p>
-<p><em>models :</em> A list of fitted model passed as a parameter.</p>
-<p><em>model_names : </em> Names of the models passed to the function</p>
-<p><em>data :</em> The actual data which will be used to calculate predicted values and RMSE for each model</p>
-<p><strong>Returns:</strong> The function will a data frame with value of RMSE on input data for each model in list</p>
-<pre class="r"><code>models_RMSE_by_data = function(models, model_names, data){
-  # Calculate model names and total number of models
-  n_mod = length(models)
-  # Initialize the data frame to be be built by the function
-  RMSE_df = data.frame(
-    row.names = model_names,
-    &quot;RMSE&quot; = rep(0L, n_mod)
-  )
-  y_i = data[[&quot;median_house_value&quot;]]
-  for (idx in 1:n_mod){
-    y_hat = exp(predict(models[[idx]], newdata = data))
-    RMSE_df[idx, &quot;RMSE&quot;] = sqrt(mean((y_i - y_hat) ^ 2))
-  }
-  return(RMSE_df)
+
+  # Print Model performance on train data
+  kable(perf_metrics_df,
+        col.names = c(&quot;Adjusted R-Squared&quot;,
+                      &quot;Train RMSE&quot;,
+                      &quot;Test RMSE&quot;,
+                      &quot;LOOCV RMSE&quot;, 
+                      &quot;Coefficients&quot;),
+        caption = &quot;Comparative Model Performance Metrics&quot;)
+
 }</code></pre>
 </div>
 <div id="data-cleaning" class="section level2">
@@ -378,7 +370,7 @@ less_preds = paste0(&quot;log(median_house_value) ~ &quot;, paste(lesser_predict
 message(&quot;Model 8: Formula: &quot;, less_preds)</code></pre>
 <pre><code>## Model 8: Formula: log(median_house_value) ~ longitude + latitude + housing_median_age + total_rooms + population + median_income + ocean_proximity</code></pre>
 <pre class="r"><code>cahoudta_lola_add_mod = lm(formula = less_preds, data = ca_housing_data.tr)</code></pre>
-<p>Test the performance metrics for the model(s).</p>
+<p>Calculate and display the performance metrics for the model(s).</p>
 <pre class="r"><code>cahoudta_models[[1]] = cahoudta_full_add_model
 cahoudta_model_names[[1]] = &quot;cahoudta_full_add_model&quot;
 
@@ -403,22 +395,18 @@ cahoudta_model_names[[7]] = &quot;cahoudta_lowvif_2poly_mod&quot;
 cahoudta_models[[8]] = cahoudta_lola_add_mod
 cahoudta_model_names[[8]] = &quot;cahoudta_lola_add_mod&quot;
 
-# Model performance on train data
-kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
-      col.names = c(&quot;R-Squared&quot;, 
-                    &quot;Adjusted R-Squared&quot;, 
-                    &quot;RMSE&quot;, 
-                    &quot;LOOCV RMSE&quot;, 
-                    &quot;Coefficients&quot;),
-      caption = &quot;Comparative Model Performance Metrics&quot;)</code></pre>
+# Print Comparative Model performance on train data
+model_performance_metrics(cahoudta_models, 
+                          cahoudta_model_names, 
+                          ca_housing_data.te)</code></pre>
 <table>
 <caption>Comparative Model Performance Metrics</caption>
 <thead>
 <tr class="header">
 <th align="left"></th>
-<th align="right">R-Squared</th>
 <th align="right">Adjusted R-Squared</th>
-<th align="right">RMSE</th>
+<th align="right">Train RMSE</th>
+<th align="right">Test RMSE</th>
 <th align="right">LOOCV RMSE</th>
 <th align="right">Coefficients</th>
 </tr>
@@ -426,120 +414,72 @@ kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
 <tbody>
 <tr class="odd">
 <td align="left">cahoudta_full_add_model</td>
-<td align="right">0.6671</td>
 <td align="right">0.6669</td>
 <td align="right">0.3290</td>
+<td align="right">0.3339</td>
 <td align="right">0.3294</td>
 <td align="right">11</td>
 </tr>
 <tr class="even">
 <td align="left">cahoudta_add_bckwd_bic_model</td>
-<td align="right">0.6671</td>
 <td align="right">0.6669</td>
 <td align="right">0.3290</td>
+<td align="right">0.3339</td>
 <td align="right">0.3294</td>
 <td align="right">11</td>
 </tr>
 <tr class="odd">
 <td align="left">cahoudta_2int_add_model</td>
-<td align="right">0.7161</td>
 <td align="right">0.7150</td>
 <td align="right">0.3038</td>
+<td align="right">0.3090</td>
 <td align="right">0.3069</td>
 <td align="right">53</td>
 </tr>
 <tr class="even">
 <td align="left">cahoudta_2int_bckwd_bic_model</td>
-<td align="right">0.7152</td>
 <td align="right">0.7144</td>
 <td align="right">0.3043</td>
+<td align="right">0.3094</td>
 <td align="right">0.3065</td>
 <td align="right">44</td>
 </tr>
 <tr class="odd">
 <td align="left">cahoudta_lowvif_add_mod</td>
-<td align="right">0.6312</td>
 <td align="right">0.6310</td>
 <td align="right">0.3463</td>
+<td align="right">0.3456</td>
 <td align="right">0.3465</td>
 <td align="right">9</td>
 </tr>
 <tr class="even">
 <td align="left">cahoudta_lowvif_2int_mod</td>
-<td align="right">0.6652</td>
 <td align="right">0.6645</td>
 <td align="right">0.3299</td>
+<td align="right">0.3321</td>
 <td align="right">0.3311</td>
 <td align="right">34</td>
 </tr>
 <tr class="odd">
 <td align="left">cahoudta_lowvif_2poly_mod</td>
-<td align="right">0.6670</td>
 <td align="right">0.6667</td>
 <td align="right">0.3290</td>
+<td align="right">0.3335</td>
 <td align="right">0.3321</td>
 <td align="right">14</td>
 </tr>
 <tr class="even">
 <td align="left">cahoudta_lola_add_mod</td>
-<td align="right">0.6517</td>
 <td align="right">0.6515</td>
 <td align="right">0.3365</td>
+<td align="right">0.3379</td>
 <td align="right">0.3368</td>
 <td align="right">10</td>
 </tr>
 </tbody>
 </table>
-<pre class="r"><code># Test RMSE
-kable(models_RMSE_by_data(cahoudta_models, 
-                          cahoudta_model_names, 
-                          ca_housing_data.te),
-      col.names = c(&quot;Test RMSE&quot;),
-      caption = &quot;Test Root Mean Square Error for Each Model&quot;)</code></pre>
-<table>
-<caption>Test Root Mean Square Error for Each Model</caption>
-<thead>
-<tr class="header">
-<th align="left"></th>
-<th align="right">Test RMSE</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">cahoudta_full_add_model</td>
-<td align="right">81319</td>
-</tr>
-<tr class="even">
-<td align="left">cahoudta_add_bckwd_bic_model</td>
-<td align="right">81319</td>
-</tr>
-<tr class="odd">
-<td align="left">cahoudta_2int_add_model</td>
-<td align="right">72827</td>
-</tr>
-<tr class="even">
-<td align="left">cahoudta_2int_bckwd_bic_model</td>
-<td align="right">72866</td>
-</tr>
-<tr class="odd">
-<td align="left">cahoudta_lowvif_add_mod</td>
-<td align="right">83311</td>
-</tr>
-<tr class="even">
-<td align="left">cahoudta_lowvif_2int_mod</td>
-<td align="right">77915</td>
-</tr>
-<tr class="odd">
-<td align="left">cahoudta_lowvif_2poly_mod</td>
-<td align="right">75554</td>
-</tr>
-<tr class="even">
-<td align="left">cahoudta_lola_add_mod</td>
-<td align="right">79626</td>
-</tr>
-</tbody>
-</table>
 <p>As we can see from the results that the backward BIC search doesn’t help in reducing number of beta parameters. Both the full model <code>cahoudta_full_add_model</code> and backward step wise search model <code>cahoudta_add_bckwd_bic_model</code> has same number of parameters i.e. 11. So we tried to reduce the train-test split to 50%-50%. Even after that the backward BIC search reduced only 1 parameter from 11 to 10 with very negligible loss in adjusted r-squared.</p>
+<p>Having both <code>latitude</code> and <code>longitude</code> reduces the adjusted r-squared further and is not a good predictor.</p>
 </div>
 <div id="model-selection" class="section level2">
 <h2>Model Selection</h2>
