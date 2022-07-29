@@ -3,10 +3,10 @@ title: "STAT 420 Final Report: Modeling California Housing Prices"
 author: "Shashank Thakur, Avinash Tiwari, Kathryn DeWitt"
 date: ''
 output:
+  pdf_document: default
   html_document: 
     theme: readable
     toc: yes  
-  pdf_document: default
 urlcolor: cyan
 ---
 
@@ -172,7 +172,7 @@ In addition to looks at graphs and summary statistics, we also began to identify
 ```{r}
 ## pairs & Cor matrix
 numeric_vals <- unlist(lapply(ca_housing_data, is.numeric), use.names = FALSE)  
-pairs(ca_housing_data[,numeric_vals], col="red")
+pairs(ca_housing_data[,numeric_vals], col="#009E73")
 round(cor(ca_housing_data[,numeric_vals]), 2)
 #Population and households are colinear
 #Population and Total rooms are also colinear
@@ -202,7 +202,8 @@ boxplot(median_house_value ~ ocean_proximity,
         ca_housing_data,
         main = "Boxplot of Median House Value by Ocean Proximity",
         ylab = "Median House value in USD",
-        xlab = "Ocean Proximity")
+        xlab = "Ocean Proximity",
+        col = "#009E73")
 
 #Remove the islands rows
 ca_housing_data = ca_housing_data[ca_housing_data$ocean_proximity != "ISLAND",]
@@ -225,7 +226,7 @@ if(any(colSums(is.na(ca_housing_data)) > 0)){
 }
 
 #QA: Assert that there are only 4 levels in ocean_proximity
-if(length(levels(ca_housing_data)) != 4){
+if(length(levels(ca_housing_data$ocean_proximity)) != 4){
   stop("Fatal error. There are not 4 levels in ocean_proximity")
 }
 ```
