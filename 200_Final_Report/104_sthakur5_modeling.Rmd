@@ -37,7 +37,7 @@ ca_housing_data = read.csv('housing.csv')
 Initialize global variables.
 ```{r}
 # build different models to test the performance
-n_models = 7
+n_models = 8
 # create a vector list of models to pass to various functions
 cahoudta_models = vector("list", length = n_models)
 cahoudta_model_names = vector("character", length = n_models)
@@ -244,6 +244,17 @@ cahoudta_lowvif_2poly_mod = lm(formula = poly_formula, data = ca_housing_data.tr
 # summary(cahoudta_lowvif_2poly_mod)$coef
 ```
 
+I will add back `latitude` and test if that gives better results.
+```{r}
+drop_cols = which(colnames(ca_housing_data.tr) == "median_house_value" | 
+                    colnames(ca_housing_data.tr) == "households")
+lesser_predictors = colnames(ca_housing_data.tr)[-drop_cols]
+less_preds = paste0("log(median_house_value) ~ ", paste(lesser_predictors, collapse = " + "))
+message("Model 8: Formula: ", less_preds)
+cahoudta_lola_add_mod = lm(formula = less_preds, data = ca_housing_data.tr)
+```
+
+
 
 Test the performance metrics for the model(s).
 ```{r}
@@ -267,6 +278,9 @@ cahoudta_model_names[[6]] = "cahoudta_lowvif_2int_mod"
 
 cahoudta_models[[7]] = cahoudta_lowvif_2poly_mod
 cahoudta_model_names[[7]] = "cahoudta_lowvif_2poly_mod"
+
+cahoudta_models[[8]] = cahoudta_lola_add_mod
+cahoudta_model_names[[8]] = "cahoudta_lola_add_mod"
 
 # Model performance on train data
 kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),

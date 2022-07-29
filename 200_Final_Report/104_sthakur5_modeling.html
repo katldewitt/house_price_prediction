@@ -197,7 +197,7 @@ ca_housing_data = read.csv(&#39;housing.csv&#39;)
 # head(ca_housing_data)</code></pre>
 <p>Initialize global variables.</p>
 <pre class="r"><code># build different models to test the performance
-n_models = 7
+n_models = 8
 # create a vector list of models to pass to various functions
 cahoudta_models = vector(&quot;list&quot;, length = n_models)
 cahoudta_model_names = vector(&quot;character&quot;, length = n_models)
@@ -370,6 +370,14 @@ message(&quot;Polynomial Formula: &quot;, poly_formula)</code></pre>
 <pre><code>## Polynomial Formula: log(median_house_value) ~ longitude + housing_median_age + total_rooms + population + median_income + ocean_proximity + I(longitude ^ 2) + I(housing_median_age ^ 2) + I(total_rooms ^ 2) + I(population ^ 2) + I(median_income ^ 2)</code></pre>
 <pre class="r"><code>cahoudta_lowvif_2poly_mod = lm(formula = poly_formula, data = ca_housing_data.tr)
 # summary(cahoudta_lowvif_2poly_mod)$coef</code></pre>
+<p>I will add back <code>latitude</code> and test if that gives better results.</p>
+<pre class="r"><code>drop_cols = which(colnames(ca_housing_data.tr) == &quot;median_house_value&quot; | 
+                    colnames(ca_housing_data.tr) == &quot;households&quot;)
+lesser_predictors = colnames(ca_housing_data.tr)[-drop_cols]
+less_preds = paste0(&quot;log(median_house_value) ~ &quot;, paste(lesser_predictors, collapse = &quot; + &quot;))
+message(&quot;Model 8: Formula: &quot;, less_preds)</code></pre>
+<pre><code>## Model 8: Formula: log(median_house_value) ~ longitude + latitude + housing_median_age + total_rooms + population + median_income + ocean_proximity</code></pre>
+<pre class="r"><code>cahoudta_lola_add_mod = lm(formula = less_preds, data = ca_housing_data.tr)</code></pre>
 <p>Test the performance metrics for the model(s).</p>
 <pre class="r"><code>cahoudta_models[[1]] = cahoudta_full_add_model
 cahoudta_model_names[[1]] = &quot;cahoudta_full_add_model&quot;
@@ -391,6 +399,9 @@ cahoudta_model_names[[6]] = &quot;cahoudta_lowvif_2int_mod&quot;
 
 cahoudta_models[[7]] = cahoudta_lowvif_2poly_mod
 cahoudta_model_names[[7]] = &quot;cahoudta_lowvif_2poly_mod&quot;
+
+cahoudta_models[[8]] = cahoudta_lola_add_mod
+cahoudta_model_names[[8]] = &quot;cahoudta_lola_add_mod&quot;
 
 # Model performance on train data
 kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
@@ -469,6 +480,14 @@ kable(model_performance_metrics(cahoudta_models, cahoudta_model_names),
 <td align="right">0.3321</td>
 <td align="right">14</td>
 </tr>
+<tr class="even">
+<td align="left">cahoudta_lola_add_mod</td>
+<td align="right">0.6517</td>
+<td align="right">0.6515</td>
+<td align="right">0.3365</td>
+<td align="right">0.3368</td>
+<td align="right">10</td>
+</tr>
 </tbody>
 </table>
 <pre class="r"><code># Test RMSE
@@ -513,6 +532,10 @@ kable(models_RMSE_by_data(cahoudta_models,
 <tr class="odd">
 <td align="left">cahoudta_lowvif_2poly_mod</td>
 <td align="right">75554</td>
+</tr>
+<tr class="even">
+<td align="left">cahoudta_lola_add_mod</td>
+<td align="right">79626</td>
 </tr>
 </tbody>
 </table>
