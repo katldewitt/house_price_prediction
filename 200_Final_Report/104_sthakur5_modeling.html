@@ -197,7 +197,7 @@ ca_housing_data = read.csv(&#39;housing.csv&#39;)
 # head(ca_housing_data)</code></pre>
 <p>Initialize global variables.</p>
 <pre class="r"><code># build different models to test the performance
-n_models = 8
+n_models = 9
 # create a vector list of models to pass to various functions
 cahoudta_models = vector(&quot;list&quot;, length = n_models)
 cahoudta_model_names = vector(&quot;character&quot;, length = n_models)
@@ -370,6 +370,23 @@ less_preds = paste0(&quot;log(median_house_value) ~ &quot;, paste(lesser_predict
 message(&quot;Model 8: Formula: &quot;, less_preds)</code></pre>
 <pre><code>## Model 8: Formula: log(median_house_value) ~ longitude + latitude + housing_median_age + total_rooms + population + median_income + ocean_proximity</code></pre>
 <pre class="r"><code>cahoudta_lola_add_mod = lm(formula = less_preds, data = ca_housing_data.tr)</code></pre>
+<p>Next we will transform predictors <code>population</code> and <code>total_rooms</code> to be normalized with predictor <code>households</code> and build a new model.</p>
+<pre class="r"><code>ca_housing_data.tr$pop_per_hh = ca_housing_data.tr$population / ca_housing_data.tr$households
+ca_housing_data.tr$rooms_per_hh = ca_housing_data.tr$total_rooms / ca_housing_data.tr$households
+ca_housing_data.te$pop_per_hh = ca_housing_data.te$population / ca_housing_data.te$households
+ca_housing_data.te$rooms_per_hh = ca_housing_data.te$total_rooms / ca_housing_data.te$households
+
+# ca_housing_data.tr = subset(ca_housing_data.tr, select = -c(population, total_rooms, households))
+# ca_housing_data.te = subset(ca_housing_data.te, select = -c(population, total_rooms, households))</code></pre>
+<p>Fit a additive model with transformed variables and predictors withou high variation inflation factors or collinearity.</p>
+<pre class="r"><code>cahoudta_2int_txfd_model = lm(log(median_house_value) ~ 
+                                (longitude + 
+                                   housing_median_age +
+                                   median_income + 
+                                   pop_per_hh + 
+                                   rooms_per_hh +
+                                   ocean_proximity ) ^ 2,
+                              data = ca_housing_data.tr)</code></pre>
 <p>Calculate and display the performance metrics for the model(s).</p>
 <pre class="r"><code>cahoudta_models[[1]] = cahoudta_full_add_model
 cahoudta_model_names[[1]] = &quot;cahoudta_full_add_model&quot;
@@ -394,6 +411,9 @@ cahoudta_model_names[[7]] = &quot;cahoudta_lowvif_2poly_mod&quot;
 
 cahoudta_models[[8]] = cahoudta_lola_add_mod
 cahoudta_model_names[[8]] = &quot;cahoudta_lola_add_mod&quot;
+
+cahoudta_models[[9]] = cahoudta_2int_txfd_model
+cahoudta_model_names[[9]] = &quot;cahoudta_2int_txfd_model&quot;
 
 # Print Comparative Model performance on train data
 model_performance_metrics(cahoudta_models, 
@@ -475,6 +495,14 @@ model_performance_metrics(cahoudta_models,
 <td align="right">0.3379</td>
 <td align="right">0.3368</td>
 <td align="right">10</td>
+</tr>
+<tr class="odd">
+<td align="left">cahoudta_2int_txfd_model</td>
+<td align="right">0.6763</td>
+<td align="right">0.3240</td>
+<td align="right">0.6948</td>
+<td align="right">0.5742</td>
+<td align="right">34</td>
 </tr>
 </tbody>
 </table>

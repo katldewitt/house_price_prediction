@@ -37,7 +37,7 @@ ca_housing_data = read.csv('housing.csv')
 Initialize global variables.
 ```{r}
 # build different models to test the performance
-n_models = 8
+n_models = 9
 # create a vector list of models to pass to various functions
 cahoudta_models = vector("list", length = n_models)
 cahoudta_model_names = vector("character", length = n_models)
@@ -240,6 +240,29 @@ message("Model 8: Formula: ", less_preds)
 cahoudta_lola_add_mod = lm(formula = less_preds, data = ca_housing_data.tr)
 ```
 
+Next we will transform predictors `population` and `total_rooms` to be normalized with predictor `households` and build a new model.
+```{r}
+ca_housing_data.tr$pop_per_hh = ca_housing_data.tr$population / ca_housing_data.tr$households
+ca_housing_data.tr$rooms_per_hh = ca_housing_data.tr$total_rooms / ca_housing_data.tr$households
+ca_housing_data.te$pop_per_hh = ca_housing_data.te$population / ca_housing_data.te$households
+ca_housing_data.te$rooms_per_hh = ca_housing_data.te$total_rooms / ca_housing_data.te$households
+
+# ca_housing_data.tr = subset(ca_housing_data.tr, select = -c(population, total_rooms, households))
+# ca_housing_data.te = subset(ca_housing_data.te, select = -c(population, total_rooms, households))
+```
+
+Fit a additive model with transformed variables and predictors withou high variation inflation factors or collinearity.
+```{r}
+cahoudta_2int_txfd_model = lm(log(median_house_value) ~ 
+                                (longitude + 
+                                   housing_median_age +
+                                   median_income + 
+                                   pop_per_hh + 
+                                   rooms_per_hh +
+                                   ocean_proximity ) ^ 2,
+                              data = ca_housing_data.tr)
+```
+
 
 Calculate and display the performance metrics for the model(s).
 ```{r}
@@ -266,6 +289,9 @@ cahoudta_model_names[[7]] = "cahoudta_lowvif_2poly_mod"
 
 cahoudta_models[[8]] = cahoudta_lola_add_mod
 cahoudta_model_names[[8]] = "cahoudta_lola_add_mod"
+
+cahoudta_models[[9]] = cahoudta_2int_txfd_model
+cahoudta_model_names[[9]] = "cahoudta_2int_txfd_model"
 
 # Print Comparative Model performance on train data
 model_performance_metrics(cahoudta_models, 
