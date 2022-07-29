@@ -104,6 +104,22 @@ model_performance_metrics = function(models, model_names){
 
 ### Data Cleaning
 
+Our first step to cleaning the data was reading in the CSV file from kaggle.com. Our team members reviewed the first five rows to ensure that there were no encoding issues reading in the raw data into R.
+
+```{r}
+#read in the data
+read_in <- function(){
+  ca_housing_data = read.csv('../000_Data/california-housing-prices/housing.csv')
+  #turn ocean_proximity to factor
+  
+  ca_housing_data
+}
+
+ca_housing_data <- read_in()
+head(ca_housing_data)
+```
+
+
 The first thing we we looked at were basic summary statistics and missingness. We found that there were 207 observation missing `total_bedrooms`. We cannot generate a linear model with missing data. However, looking at the colinearity, we will find a solution that allows us to keep these observations.
 
 ```{r}
@@ -116,16 +132,6 @@ colSums(is.na(ca_housing_data))
 As part of data cleaning, we plotted the `median_house_value` against latitude and longitude to visualize the locations of the different houses. One of the first things we noticed were two distinct clusters of highly priced houses that appear to correspond to Los Angeles and the San Francisco Bay Area in bright red. The lighter green dots in the plot illustrate the lowest priced houses. Note that this scale differentiates by color using the median house value as a midpoint, which helps to illustrate concentrated areas of high price values.
 
 ```{r}
-#read in the data
-read_in <- function(){
-  ca_housing_data = read.csv('../000_Data/california-housing-prices/housing.csv')
-  #turn ocean_proximity to factor
-  
-  ca_housing_data
-}
-
-ca_housing_data <- read_in()
-
 ## Map the data
 #Source: https://stackoverflow.com/questions/65233613/plot-a-map-using-lat-and-long-with-r
 my_sf <- st_as_sf(ca_housing_data, coords = c('longitude', 'latitude'))
