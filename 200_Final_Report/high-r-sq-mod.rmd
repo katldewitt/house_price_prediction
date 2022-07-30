@@ -31,6 +31,7 @@ library(lmtest)
 ca_housing_data = read.csv('../000_Data/california-housing-prices/housing.csv')
 ca_housing_data = subset(ca_housing_data, 
                          subset = ca_housing_data$ocean_proximity != "ISLAND")
+cah_data = ca_housing_data
 #head(ca_housing_data)
 #View(ca_housing_data)
 #str(ca_housing_data)
@@ -40,8 +41,8 @@ ca_housing_data = subset(ca_housing_data,
 ```{r}
 # delete rows with missing values - as only 207 rows have missing value for only one variable "total_bedrooms"
 nrow(ca_housing_data)
-cah_data = na.omit(ca_housing_data)
-nrow(ca_housing_data) - nrow(cah_data)
+#cah_data = na.omit(ca_housing_data)
+#nrow(ca_housing_data) - nrow(cah_data)
 ```
 
 ## Data cleaning
@@ -58,40 +59,32 @@ cah_tst_data = cah_data[-cah_trn_idx, ]
 cah_trn_data$ocean_proximity = as.factor(cah_trn_data$ocean_proximity)
 cah_trn_data$pop_per_hh = cah_trn_data$population / cah_trn_data$households
 cah_trn_data$rooms_per_hh = cah_trn_data$total_rooms / cah_trn_data$households
-cah_trn_data$bedrooms_per_hh = cah_trn_data$total_bedrooms / cah_trn_data$households
+#cah_trn_data$bedrooms_per_hh = cah_trn_data$total_bedrooms / cah_trn_data$households
 ```
 
 ## Model Building
 ```{r}
 
-mod  = lm(log(median_house_value) ~ longitude + housing_median_age + median_income + pop_per_hh + bedrooms_per_hh + ocean_proximity, data = cah_trn_data)
+mod  = lm(log(median_house_value) ~ longitude + housing_median_age + median_income + pop_per_hh + rooms_per_hh + ocean_proximity, data = cah_trn_data)
 #summary(mod)
 #vif(mod)
 ```
 
 ```{r}
-mod_fix_int = lm (log(median_house_value) ~ (longitude + housing_median_age + median_income + pop_per_hh + bedrooms_per_hh + ocean_proximity ) ^ 2, 
+mod_fix_int = lm (log(median_house_value) ~ (longitude + housing_median_age + median_income + pop_per_hh + rooms_per_hh + ocean_proximity ) ^ 2, 
                   data = cah_trn_data, 
                   subset = (cooks.distance(mod) <= 4 /length(cooks.distance(mod))))
 summary(mod_fix_int)
 
 ```
 
-```{r}
-get_RMSE = function(fitted_y, actual_y){
-  n = length(fitted_y)                                      #length of data 
-  rmse = sqrt((sum(((actual_y - fitted_y) ^ 2)) / n))
-}
-```
 
 ```{r}
 cah_tst_data$ocean_proximity = as.factor(cah_tst_data$ocean_proximity)
 cah_tst_data$pop_per_hh = cah_tst_data$population / cah_tst_data$households
 cah_tst_data$rooms_per_hh = cah_tst_data$total_rooms / cah_tst_data$households
-cah_tst_data$bedrooms_per_hh = cah_tst_data$total_bedrooms / cah_tst_data$households
+#cah_tst_data$bedrooms_per_hh = cah_tst_data$total_bedrooms / cah_tst_data$households
 
-(get_RMSE(predict(mod_fix_int, cah_trn_data), cah_trn_data$median_house_value)) # 237303
-(get_RMSE(predict(mod_fix_int, cah_tst_data), cah_tst_data$median_house_value)) # 235732
 ```
 
 
