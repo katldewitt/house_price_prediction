@@ -3,10 +3,10 @@ title: "Stat 420 Final Project - Modeling"
 author: "Shashank Thakur, Net ID: sthakur5"
 date: '27th July 2022'
 output:
+  pdf_document: default
   html_document: 
     theme: readable
     toc: yes  
-  pdf_document: default
 urlcolor: cyan
 editor_options: 
   chunk_output_type: console
@@ -20,8 +20,8 @@ options(scipen = 1, digits = 4, width = 80, fig.alin = "center")
 
 library(ggplot2)
 library(faraway)
-library(lmtest)
 library(knitr)
+library(broom)
 ```
 
 
@@ -328,4 +328,26 @@ Having both `latitude` and `longitude` reduces the adjusted r-squared further an
 
 ## Model Selection
 
-Work in progress...
+During the model building process, we explored **8** different models for our housing data set. The main goal of our project was effectively model the California Housing Data to determine the predictors which explain the `median_house_value`. Based on our table titled **Comparative Model Performance Metrics** we select model `cahoudta_full_add_model` as our best model. 
+
+This model has following features:
+
+- High `adjusted r-squared` of **0.7597**
+- Lowest `Test RMSE` of **0.3407**
+- Lowest `Train RMSE` of **0.2687**
+- Due to low number of coefficients **(11)** it is easy to interpret and computationally efficient.
+
+Following are all the predictors for the model `cahoudta_full_add_model` with test statistics and p-values.
+```{r}
+tidy(cahoudta_full_add_model)
+```
+
+We will also run all the standard diagnostics on this model.
+```{r fig.height=12, fig.width=12}
+par(mfrow=c(2, 2))
+
+plot(cahoudta_full_add_model,
+     pch = 20,
+     col = "lightgoldenrod2")
+```
+
