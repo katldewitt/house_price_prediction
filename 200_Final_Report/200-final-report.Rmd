@@ -23,7 +23,7 @@ library(sf)
 
 ### Executive Summary
 
-In this report we will discuss the creation of a linear model to model median house value of a block group in California (CA) in the 1990's based on administrative (Census) data. Given the recent turbulence in the real estate market and associated bidding wars, there is a renewed interest in what the value of a house is. Utilizing methods from STAT 420, we underwent model selection to identify the optimal model that minimized RMSE, met the assumptions of linear modelling, and had the fewest parameters to enhance explainability. The best linear model include the parameters <!TODO: add params from best linear model> and a test RMSE of <!TODO: add test RMSE>. Our model provides utility in explaining the relationship between how features of a California Block Group relate to the median house value of the block group.
+In this report we will discuss the creation of a linear model to model median house value of a block group in California (CA) in the 1990's based on administrative (Census) data. Given the recent turbulence in the real estate market and associated bidding wars, there is a renewed interest in what the value of a house is. Utilizing methods from STAT 420, we underwent model selection to identify the optimal model that minimized test RMSE, met the assumptions of linear modelling, and had the fewest parameters to enhance explainability. The best linear model include the parameters <!TODO: add params from best linear model> and a test RMSE of <!TODO: add test RMSE>. Our model provides utility in explaining the relationship between how features of a California Block Group relate to the median house value of the block group.
 
 ### The Data
 
@@ -53,7 +53,7 @@ Another important limitation of the source of this data is the date range. Since
 
 ## Methods
 
-We will now discuss the steps we used to generate our linear model. We began by conducting exploratory data analysis (EDA). Based on the EDA, we identified steps necessary to clean our data. In order to ensure our model was not overfit, we split the data set into a 70-30 train-test split. Next we underwent model selection process to minimize the RMSE of our model. In order to conduct model selection and graph the results, we leveraged helper functions that we will describe before diving into the model selection.
+We will now discuss the steps we used to generate our linear model. We began by conducting exploratory data analysis (EDA). Based on the EDA, we identified steps necessary to clean our data. In order to ensure our model was not overfit, we split the data set into a 70-30 train-test split. Next we underwent model selection process to minimize the test RMSE of our model. In order to conduct model selection and graph the results, we leveraged helper functions that we will describe before diving into the model selection.
 
 
 ### Helper Functions
@@ -118,7 +118,7 @@ head(ca_housing_data)
 ```
 
 
-The first thing we we looked at were basic summary statistics and missingness. We found that there were 207 observation missing `total_bedrooms`. We cannot generate a linear model with missing data. However, looking at the colinearity, we will find a solution that allows us to keep these observations.
+The first thing we we looked at were basic summary statistics and missingness. We found that there were 207 observation missing `total_bedrooms`. We cannot generate a linear model with missing data. However, looking at the collinearity, we will find a solution that allows us to keep these observations.
 
 ```{r}
 summary(ca_housing_data)
@@ -145,7 +145,7 @@ ggplot(my_sf) +
     high = "#D55E00") 
 ```
 
-We also generated histograms for all relevant predictors. The relevant most relevant finding of this EDA is the long tail of our outcome variable `median_house_value`.
+We also generated histograms for all relevant predictors. The most important finding discovered while performing EDA was the long tail of our outcome variable `median_house_value`.
 
 ```{r}
 ggplot(ca_housing_data, aes(median_house_value)) +
@@ -155,7 +155,7 @@ ggplot(ca_housing_data, aes(median_house_value)) +
                     title = "Histogram of Median House Values")
 ```
 
-Based on the histogram, we see that our response variable could benefit from a log transformation. Generally most dollar variables require a log transformation, and `median_house_value` is no different. This log transformation will also assist with linear model assumptions during model selection. 
+**Based on the histogram, we see that our response variable could benefit from a log transformation.** Generally most dollar variables require a log transformation, and `median_house_value` is no different. This log transformation will also assist with linear model assumptions during model selection.
 
 ```{r}
 ggplot(ca_housing_data, aes(log(median_house_value))) +
@@ -165,15 +165,15 @@ ggplot(ca_housing_data, aes(log(median_house_value))) +
                     title = "Histogram of Median House Values")
 ```
 
-In addition to looks at graphs and summary statistics, we also began to identify variables with colinearity issues via a correlation matrix and pairwise plot. In the pairwise plot we see that `total_bedrooms` is highly colinear with `total_rooms`, but total_rooms is not missing any values. With this in mind, we can utilize the variable `total_rooms` to preserve the 207 observations. 
+In addition to looking at graphs and reviewing summary statistics, we also began to identify variables with collinearity issues via a correlation matrix and pairwise plot. In the pairwise plot we see that `total_bedrooms` is highly collinear with `total_rooms`, but `total_rooms` is not missing any values. With this in mind, we can utilize the variable `total_rooms` to preserve the 207 observations. 
 
 ```{r}
 ## pairs & Cor matrix
 numeric_vals <- unlist(lapply(ca_housing_data, is.numeric), use.names = FALSE)  
 pairs(ca_housing_data[,numeric_vals], col="#009E73")
 round(cor(ca_housing_data[,numeric_vals]), 2)
-#Population and households are colinear
-#Population and Total rooms are also colinear
+#Population and households are collinear
+#Population and Total rooms are also collinear
 #latitude and longitude are also highly correlated
 
 #Remove total_bedrooms
@@ -191,7 +191,7 @@ ggplot(my_sf) +
                     title = "Ocean Proximity by Location")
 ```
 
-In the table below, the reader can see this column has 5 different categories. It is important to note that the `ISLAND` category has only 5 observations. During initial analysis, our team determined that `ISLAND` has a substantially higher response variable `median_house_value` than the other categories as illustrated by the below boxplot. This fact is problematic for our purpose. We will be dropping the rows from data set with `ISLAND` category and coercing the predictor `ocean_proximity` to be categorical.
+In the table below, the reader can see this column has 5 different categories. It is important to note that the `ISLAND` category has only 5 observations. During initial analysis, our team determined that `ISLAND` has a substantially higher average value of response variable `median_house_value` than the other categories as illustrated by the below boxplot. This fact is problematic for our purpose. We will be dropping the rows from data set with `ISLAND` category and coercing the predictor `ocean_proximity` to be categorical.
 
 ```{r}
 #Ocean proximity - only 5 in island, and substantially different. I propose removing from consideration to avoid overfitting depending on an unlucky test/train split
@@ -210,7 +210,7 @@ ca_housing_data = ca_housing_data[ca_housing_data$ocean_proximity != "ISLAND",]
 ca_housing_data$ocean_proximity <- as.factor(ca_housing_data$ocean_proximity)
 ```
 
-At this point, we have concluded the prerequisite data cleaning and can move onto model selection. Our final data set used for modelling has `r nrow(ca_housing_data)` and `r ncol(ca_housing_data)`. The summary statistics can be found below.
+At this point, we have concluded the prerequisite data cleaning and can move onto model selection. Our final data set used for modelling has `r nrow(ca_housing_data)` rows and `r ncol(ca_housing_data)` columns. The summary statistics can be found below.
 
 
 ```{r}
@@ -230,7 +230,7 @@ if(length(levels(ca_housing_data$ocean_proximity)) != 4){
 ```
 
 
-### Model Selection Procss
+### Model Selection Process
 
 Now that we have data cleaned, we will proceed with building a model. The very first step we will take is to divide data into train and test. Based on total number of observations we have, team has decided to use 70%-30% split for train-test data.
 
@@ -286,6 +286,8 @@ We also evaluated the impact of using interaction terms... <!TODO: add more>
 <!TODO: Avi to add other directions we did not have time to implement>
 
 ## Appendix 
+
+<!TODO: add details in the appendix on model selection and possibly EDA>
 
 ### Authors
 
