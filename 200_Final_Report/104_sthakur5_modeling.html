@@ -304,15 +304,22 @@ ca_housing_data.te = ca_housing_data[-cahoudta_trn_idx, ]
 
 n_tr_rows = nrow(ca_housing_data.tr)
 n_te_rows = nrow(ca_housing_data.te)</code></pre>
-<p>Next we will build models and start running tests.</p>
-<pre class="r"><code>cahoudta_full_add_model = lm(log(median_house_value) ~ ., data = ca_housing_data.tr)
+<p>Next we will build models and start running tests. While recursively analyzing different model predictors and transformations, it was identified that there are few outlier observations which result in issues with the model training. So we circled back to very first full additive model and identified these outliers.</p>
+<pre class="r"><code>cahoudta_full_add_model_cd = lm(log(median_house_value) ~ ., data = ca_housing_data.tr)
+cd_full_add_mod = cooks.distance(cahoudta_full_add_model_cd)
+(count_outliers = sum(cd_full_add_mod &gt; 4 / length(cd_full_add_mod)))</code></pre>
+<pre><code>## [1] 841</code></pre>
+<p>We will now adjust our full additive model by ignoring these <strong>841</strong> outliers while training. This fitting gives best Test RMSE.</p>
+<pre class="r"><code>cahoudta_full_add_model = lm(log(median_house_value) ~ ., 
+                             data = ca_housing_data.tr,
+                             subset = (cd_full_add_mod &lt;= 4 / length(cd_full_add_mod)))
 # summary(cahoudta_full_add_model)</code></pre>
 <p>Checking if there is multi-collinearity in the full fitted additive model. Following code snippet outputs all the predictors which has high variation inflation factors.</p>
 <pre class="r"><code>high_vif_predictors = vif(cahoudta_full_add_model) &gt; 5
 high_vif_pred_vals = vif(cahoudta_full_add_model)[high_vif_predictors]
 sort(high_vif_pred_vals)</code></pre>
 <pre><code>##  population total_rooms  households   longitude    latitude 
-##       6.606       9.815      12.064      18.098      19.893</code></pre>
+##        7.35       11.23       13.55       19.84       22.32</code></pre>
 <p>Based on variable inflation factors the predictors <code>households</code> and <code>latitude</code> can be dropped.</p>
 <p>Lets try backward BIC search from the full additive model.</p>
 <pre class="r"><code>cahoudta_add_bckwd_bic_model = step(cahoudta_full_add_model, 
@@ -320,7 +327,8 @@ sort(high_vif_pred_vals)</code></pre>
                                     k = log(n_tr_rows),
                                     trace = 0)</code></pre>
 <p>Lets try two way interaction full additive model.</p>
-<pre class="r"><code>cahoudta_2int_add_model = lm(log(median_house_value) ~ . ^ 2, data = ca_housing_data.tr)</code></pre>
+<pre class="r"><code>cahoudta_2int_add_model = lm(log(median_house_value) ~ . ^ 2, 
+                             data = ca_housing_data.tr)</code></pre>
 <p>Lets try backward BIC search from two way interaction full additive model.</p>
 <pre class="r"><code>cahoudta_2int_bckwd_bic_model = step(cahoudta_2int_add_model, 
                                     direction = &quot;backward&quot;,
@@ -379,14 +387,24 @@ ca_housing_data.te$rooms_per_hh = ca_housing_data.te$total_rooms / ca_housing_da
 # ca_housing_data.tr = subset(ca_housing_data.tr, select = -c(population, total_rooms, households))
 # ca_housing_data.te = subset(ca_housing_data.te, select = -c(population, total_rooms, households))</code></pre>
 <p>Fit a additive model with transformed variables and predictors withou high variation inflation factors or collinearity.</p>
-<pre class="r"><code>cahoudta_2int_txfd_model = lm(log(median_house_value) ~ 
+<pre class="r"><code>cahoudta_2int_txfd_model_cd = lm(log(median_house_value) ~ 
                                 (longitude + 
                                    housing_median_age +
                                    median_income + 
                                    pop_per_hh + 
                                    rooms_per_hh +
                                    ocean_proximity ) ^ 2,
-                              data = ca_housing_data.tr)</code></pre>
+                              data = ca_housing_data.tr)
+cd_2int_txfd = cooks.distance(cahoudta_2int_txfd_model_cd)
+cahoudta_2int_txfd_model = lm(log(median_house_value) ~ 
+                                (longitude + 
+                                   housing_median_age +
+                                   median_income + 
+                                   pop_per_hh + 
+                                   rooms_per_hh +
+                                   ocean_proximity ) ^ 2,
+                              data = ca_housing_data.tr,
+                              subset = (cd_2int_txfd &lt;= 4 / length(cd_2int_txfd)))</code></pre>
 <p>Calculate and display the performance metrics for the model(s).</p>
 <pre class="r"><code>cahoudta_models[[1]] = cahoudta_full_add_model
 cahoudta_model_names[[1]] = &quot;cahoudta_full_add_model&quot;
@@ -434,19 +452,19 @@ model_performance_metrics(cahoudta_models,
 <tbody>
 <tr class="odd">
 <td align="left">cahoudta_full_add_model</td>
-<td align="right">0.6669</td>
-<td align="right">0.3290</td>
-<td align="right">0.3339</td>
-<td align="right">0.3294</td>
+<td align="right">0.7597</td>
+<td align="right">0.2687</td>
+<td align="right">0.3407</td>
+<td align="right">0.2690</td>
 <td align="right">11</td>
 </tr>
 <tr class="even">
 <td align="left">cahoudta_add_bckwd_bic_model</td>
-<td align="right">0.6669</td>
-<td align="right">0.3290</td>
-<td align="right">0.3339</td>
-<td align="right">0.3294</td>
-<td align="right">11</td>
+<td align="right">0.7596</td>
+<td align="right">0.2688</td>
+<td align="right">0.3407</td>
+<td align="right">0.2690</td>
+<td align="right">10</td>
 </tr>
 <tr class="odd">
 <td align="left">cahoudta_2int_add_model</td>
@@ -498,16 +516,16 @@ model_performance_metrics(cahoudta_models,
 </tr>
 <tr class="odd">
 <td align="left">cahoudta_2int_txfd_model</td>
-<td align="right">0.6763</td>
-<td align="right">0.3240</td>
-<td align="right">0.6948</td>
-<td align="right">0.5742</td>
+<td align="right">0.7702</td>
+<td align="right">0.2635</td>
+<td align="right">1.6615</td>
+<td align="right">0.2664</td>
 <td align="right">34</td>
 </tr>
 </tbody>
 </table>
 <p>As we can see from the results that the backward BIC search doesn’t help in reducing number of beta parameters. Both the full model <code>cahoudta_full_add_model</code> and backward step wise search model <code>cahoudta_add_bckwd_bic_model</code> has same number of parameters i.e. 11. So we tried to reduce the train-test split to 50%-50%. Even after that the backward BIC search reduced only 1 parameter from 11 to 10 with very negligible loss in adjusted r-squared.</p>
-<p>Having both <code>latitude</code> and <code>longitude</code> reduces the adjusted r-squared further and is not a good predictor.</p>
+<p>Having both <code>latitude</code> and <code>longitude</code> reduces the adjusted r-squared further and is not a good predictor combination.</p>
 </div>
 <div id="model-selection" class="section level2">
 <h2>Model Selection</h2>

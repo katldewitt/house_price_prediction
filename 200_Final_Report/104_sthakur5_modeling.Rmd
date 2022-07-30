@@ -144,10 +144,19 @@ n_tr_rows = nrow(ca_housing_data.tr)
 n_te_rows = nrow(ca_housing_data.te)
 ```
 
-Next we will build models and start running tests.
+Next we will build models and start running tests. While recursively analyzing different model predictors and transformations, it was identified that there are few outlier observations which result in issues with the model training. So we circled back to  very first full additive model and identified these outliers.
 
 ```{r}
-cahoudta_full_add_model = lm(log(median_house_value) ~ ., data = ca_housing_data.tr)
+cahoudta_full_add_model_cd = lm(log(median_house_value) ~ ., data = ca_housing_data.tr)
+cd_full_add_mod = cooks.distance(cahoudta_full_add_model_cd)
+(count_outliers = sum(cd_full_add_mod > 4 / length(cd_full_add_mod)))
+```
+
+We will now adjust our full additive model by ignoring these **`r count_outliers`** outliers while training. This fitting gives best Test RMSE.
+```{r}
+cahoudta_full_add_model = lm(log(median_house_value) ~ ., 
+                             data = ca_housing_data.tr,
+                             subset = (cd_full_add_mod <= 4 / length(cd_full_add_mod)))
 # summary(cahoudta_full_add_model)
 ```
 
@@ -170,7 +179,9 @@ cahoudta_add_bckwd_bic_model = step(cahoudta_full_add_model,
 
 Lets try two way interaction full additive model.
 ```{r}
-cahoudta_2int_add_model = lm(log(median_house_value) ~ . ^ 2, data = ca_housing_data.tr)
+cahoudta_2int_add_model = lm(log(median_house_value) ~ . ^ 2, 
+                             data = ca_housing_data.tr)
+
 ```
 
 Lets try backward BIC search from two way interaction full additive model.
@@ -179,6 +190,7 @@ cahoudta_2int_bckwd_bic_model = step(cahoudta_2int_add_model,
                                     direction = "backward",
                                     k = log(n_tr_rows),
                                     trace = 0)
+
 ```
 
 We will run pairs plot to check any obvious trends in predictors compared to the response variable `median_house_value`.
@@ -253,7 +265,7 @@ ca_housing_data.te$rooms_per_hh = ca_housing_data.te$total_rooms / ca_housing_da
 
 Fit a additive model with transformed variables and predictors withou high variation inflation factors or collinearity.
 ```{r}
-cahoudta_2int_txfd_model = lm(log(median_house_value) ~ 
+cahoudta_2int_txfd_model_cd = lm(log(median_house_value) ~ 
                                 (longitude + 
                                    housing_median_age +
                                    median_income + 
@@ -261,6 +273,16 @@ cahoudta_2int_txfd_model = lm(log(median_house_value) ~
                                    rooms_per_hh +
                                    ocean_proximity ) ^ 2,
                               data = ca_housing_data.tr)
+cd_2int_txfd = cooks.distance(cahoudta_2int_txfd_model_cd)
+cahoudta_2int_txfd_model = lm(log(median_house_value) ~ 
+                                (longitude + 
+                                   housing_median_age +
+                                   median_income + 
+                                   pop_per_hh + 
+                                   rooms_per_hh +
+                                   ocean_proximity ) ^ 2,
+                              data = ca_housing_data.tr,
+                              subset = (cd_2int_txfd <= 4 / length(cd_2int_txfd)))
 ```
 
 
@@ -301,7 +323,7 @@ model_performance_metrics(cahoudta_models,
 
 As we can see from the results that the backward BIC search doesn't help in reducing number of beta parameters. Both the full model `cahoudta_full_add_model` and backward step wise search model `cahoudta_add_bckwd_bic_model` has same number of parameters i.e. 11. So we tried to reduce the train-test split to 50%-50%. Even after that the backward BIC search reduced only 1 parameter from 11 to 10 with very negligible loss in adjusted r-squared.
 
-Having both `latitude` and `longitude` reduces the adjusted r-squared further and is not a good predictor.
+Having both `latitude` and `longitude` reduces the adjusted r-squared further and is not a good predictor combination.
 
 
 ## Model Selection
