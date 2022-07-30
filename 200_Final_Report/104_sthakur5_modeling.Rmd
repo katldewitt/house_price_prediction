@@ -3,10 +3,10 @@ title: "Stat 420 Final Project - Modeling"
 author: "Shashank Thakur, Net ID: sthakur5"
 date: '27th July 2022'
 output:
+  pdf_document: default
   html_document: 
     theme: readable
     toc: yes  
-  pdf_document: default
 urlcolor: cyan
 editor_options: 
   chunk_output_type: console
@@ -129,7 +129,7 @@ levels(ca_housing_data$ocean_proximity)
 
 ## Model Building
 
-Now that we have data cleaned, we will proceed with building a model. The very first step we will take is to divide data into train and test. Based on total number of observations we've, team has decided to use 70%-30% split for train-test data.
+Now that we have data cleaned, we will proceed with building a model. The very first step we will take is to divide data into train and test. Based on total number of observations team has decided to use 70%-30% split for train-test data.
 ```{r}
 set.seed(420072022)
 # Randomly select train indexes
@@ -199,13 +199,13 @@ pairs(subset(ca_housing_data.tr,
       col = "orchid2")
 ```
 
-Based on pairs plot, for response variable `median_house_value`
+Based on pairs plot and for response variable `median_house_value`
 
-- `median_income`, `households`, `total_rooms` has some polynomial relationship.
+- Variables `median_income`, `households`, `total_rooms` have some polynomial relationship.
 
-- `housing_mdeian_age` has lot of variance and needs variable transformation.
+- Variable `housing_median_age` has lot of variance and needs variable transformation.
 
-- Either one of `latitude` or `longitude` can be eliminated
+- Either one of `latitude` or `longitude` can be eliminated due to high partial collinearity.
 
 
 Lets drop the predictors `households` and `latitude` with high VIF.
