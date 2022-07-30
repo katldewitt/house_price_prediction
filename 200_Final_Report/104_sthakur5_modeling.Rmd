@@ -86,7 +86,7 @@ model_performance_metrics = function(models, model_names, data){
     y_hat = predict(models[[idx]], newdata = data)
     perf_metrics_df[idx, "Test.RMSE"] = sqrt(mean((y_i - y_hat) ^ 2))    
     perf_metrics_df[model_names[idx], "LOOCV_RMSE"] = sqrt(mean((resid(models[[idx]]) / 
-                                                                   (1 - hatvalues(models[[idx]]))) ^ 2)) 
+                                                      (1 - hatvalues(models[[idx]]))) ^ 2)) 
     perf_metrics_df[model_names[idx], "Coefs"] = length(coef(models[[idx]]))
   }
 
@@ -143,7 +143,7 @@ n_tr_rows = nrow(ca_housing_data.tr)
 n_te_rows = nrow(ca_housing_data.te)
 ```
 
-Next we will build models and start running tests. While recursively analyzing different model predictors and transformations, it was identified that there are few outlier observations which result in issues with the model training. So we circled back to  very first full additive model and identified these outliers.
+Next we will build models and start running tests. While recursively analyzing different model predictors and transformations, it was identified that there are few outlier observations which result in issues with the model training. So we circled back to the very first full additive model and identified these outliers.
 
 ```{r}
 cahoudta_full_add_model_cd = lm(log(median_house_value) ~ ., data = ca_housing_data.tr)
@@ -216,13 +216,15 @@ drop_cols = which(colnames(ca_housing_data.tr) == "median_house_value" |
                     colnames(ca_housing_data.tr) == "households" | 
                     colnames(ca_housing_data.tr) == "latitude")
 smaller_predictors = colnames(ca_housing_data.tr)[-drop_cols]
-less_preds = paste0("log(median_house_value) ~ ", paste(smaller_predictors, collapse = " + "))
+less_preds = paste0("log(median_house_value) ~ ", 
+                    paste(smaller_predictors, collapse = " + "))
 cahoudta_lowvif_add_mod = lm(formula = less_preds, data = ca_housing_data.tr)
 ```
 
 Lets add 2 way interaction for above model to check the performance.
 ```{r}
-less_preds_2int = paste0("log(median_house_value) ~ (", paste(smaller_predictors, collapse = " + "), ") ^ 2")
+less_preds_2int = paste0("log(median_house_value) ~ (", 
+                         paste(smaller_predictors, collapse = " + "), ") ^ 2")
 cahoudta_lowvif_2int_mod = lm(formula = less_preds_2int, data = ca_housing_data.tr)
 ```
 
@@ -232,9 +234,12 @@ drop_cols = which(colnames(ca_housing_data.tr) == "median_house_value" |
                     colnames(ca_housing_data.tr) == "households" | 
                     colnames(ca_housing_data.tr) == "latitude")
 reduced_predictors = colnames(ca_housing_data.tr)[-drop_cols]
-less_preds = paste0("log(median_house_value) ~ ", paste(smaller_predictors, collapse = " + "))
-further_reduced_predictors = reduced_predictors[-which(reduced_predictors == "ocean_proximity")]
-less_poly_preds = paste0(" + I(", paste(further_reduced_predictors, collapse = " ^ 2) + I("), " ^ 2)")
+less_preds = paste0("log(median_house_value) ~ ", paste(smaller_predictors, 
+                                                        collapse = " + "))
+further_reduced_predictors = reduced_predictors[-which(reduced_predictors 
+                                                       == "ocean_proximity")]
+less_poly_preds = paste0(" + I(", paste(further_reduced_predictors, 
+                                        collapse = " ^ 2) + I("), " ^ 2)")
 poly_formula = paste0(less_preds, less_poly_preds)
 message("Polynomial Formula: ", poly_formula)
 cahoudta_lowvif_2poly_mod = lm(formula = poly_formula, data = ca_housing_data.tr)
@@ -246,20 +251,23 @@ I will add back `latitude` and test if that gives better results.
 drop_cols = which(colnames(ca_housing_data.tr) == "median_house_value" | 
                     colnames(ca_housing_data.tr) == "households")
 lesser_predictors = colnames(ca_housing_data.tr)[-drop_cols]
-less_preds = paste0("log(median_house_value) ~ ", paste(lesser_predictors, collapse = " + "))
+less_preds = paste0("log(median_house_value) ~ ", 
+                    paste(lesser_predictors, 
+                          collapse = " + "))
 message("Model 8: Formula: ", less_preds)
 cahoudta_lola_add_mod = lm(formula = less_preds, data = ca_housing_data.tr)
 ```
 
 Next we will transform predictors `population` and `total_rooms` to be normalized with predictor `households` and build a new model.
 ```{r}
-ca_housing_data.tr$pop_per_hh = ca_housing_data.tr$population / ca_housing_data.tr$households
-ca_housing_data.tr$rooms_per_hh = ca_housing_data.tr$total_rooms / ca_housing_data.tr$households
-ca_housing_data.te$pop_per_hh = ca_housing_data.te$population / ca_housing_data.te$households
-ca_housing_data.te$rooms_per_hh = ca_housing_data.te$total_rooms / ca_housing_data.te$households
-
-# ca_housing_data.tr = subset(ca_housing_data.tr, select = -c(population, total_rooms, households))
-# ca_housing_data.te = subset(ca_housing_data.te, select = -c(population, total_rooms, households))
+ca_housing_data.tr$pop_per_hh = (ca_housing_data.tr$population / 
+                                   ca_housing_data.tr$households)
+ca_housing_data.tr$rooms_per_hh = (ca_housing_data.tr$total_rooms / 
+                                     ca_housing_data.tr$households)
+ca_housing_data.te$pop_per_hh = (ca_housing_data.te$population / 
+                                   ca_housing_data.te$households)
+ca_housing_data.te$rooms_per_hh = (ca_housing_data.te$total_rooms / 
+                                     ca_housing_data.te$households)
 ```
 
 Fit a additive model with transformed variables and predictors withou high variation inflation factors or collinearity.
@@ -284,8 +292,9 @@ cahoudta_2int_txfd_model = lm(log(median_house_value) ~
                               subset = (cd_2int_txfd <= 4 / length(cd_2int_txfd)))
 ```
 
+### Comparative Model Performance Metrics
 
-Calculate and display the performance metrics for the model(s).
+We will now compare all the models to calculate and display the performance metrics.
 ```{r}
 cahoudta_models[[1]] = cahoudta_full_add_model
 cahoudta_model_names[[1]] = "cahoudta_full_add_model"
@@ -327,7 +336,7 @@ Having both `latitude` and `longitude` reduces the adjusted r-squared further an
 
 ## Model Selection
 
-During the model building process, we explored **8** different models for our housing data set. The main goal of our project was effectively model the California Housing Data to determine the predictors which explain the `median_house_value`. Based on our table titled **Comparative Model Performance Metrics** we select model `cahoudta_full_add_model` as our best model. 
+During the model building process, we explored **`r n_models`** different models for our housing data set. The main goal we had for this project was to effectively model the California Housing Data and identify the predictors which help explain the `median_house_value` response variable. Based on table [Comparative Model Performance Metrics](#comparative-model-performance-metrics) we select model `cahoudta_full_add_model` as our best model for purpose of this project. 
 
 This model has following features:
 
