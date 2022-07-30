@@ -2,7 +2,9 @@
 title: "high-r-sq-model.rmd"
 author: "Avinash Tiwari"
 date: '2022-07-30'
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 # Analysis Workbook
 ## Proposal
