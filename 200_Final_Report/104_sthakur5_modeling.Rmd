@@ -3,10 +3,10 @@ title: "Stat 420 Final Project - Modeling"
 author: "Shashank Thakur, Net ID: sthakur5"
 date: '27th July 2022'
 output:
-  pdf_document: default
   html_document: 
     theme: readable
     toc: yes  
+  pdf_document: default
 urlcolor: cyan
 editor_options: 
   chunk_output_type: console
@@ -29,8 +29,7 @@ library(broom)
 
 Read the data file to be used for this project.
 ```{r read_data_file}
-setwd("/Users/srthakur/Documents/GitHub/house_price_prediction/200_Final_Report")
-ca_housing_data = read.csv('housing.csv')
+ca_housing_data = read.csv('../000_Data/california-housing-prices/housing.csv')
 # head(ca_housing_data)
 ```
 
