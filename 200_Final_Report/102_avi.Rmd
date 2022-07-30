@@ -20,6 +20,7 @@ library(faraway)
 
 ## Proposal
 ## Define Helper Functions
+
 ```{r}
 
 ## 1. FUNCTIONS TO CHECK / OPTIMIZE MODEL PERFORMANCE ##
@@ -110,11 +111,12 @@ get_cor = function(num_data){
 
 ## 2. FUNCTIONS FOR CHECKING LINEAR REGRESSION MODEL ASSUMPTIONS (LINE) ##
 
+# dont use this one - use the one in helper function 
 # function to plot fitted vs. residula plot to test homoscedasticity - uniform variation in error plotted against the fitted value or response  
-plot_fitted_resid = function(model, pointcol = "dodgerblue", linecol = "darkorange") {
-  plot(fitted(model), resid(model), col = pointcol, pch = 20, cex = 1.5, xlab = "Fitted", ylab = "Residuals")
-  abline(h = 0, col = linecol, lwd = 2)
-}
+#plot_fitted_resid = function(model, pointcol = "dodgerblue", linecol = "darkorange") {
+#  plot(fitted(model), resid(model), col = pointcol, pch = 20, cex = 1.5, xlab = "Fitted", ylab = "Residuals")
+#  abline(h = 0, col = linecol, lwd = 2)
+#}
 
 # function to get decision of Breusch-Pagan Test (for checking homoscedasticity)
 get_bp_decision = function(model, alpha) {
@@ -122,11 +124,12 @@ get_bp_decision = function(model, alpha) {
   ifelse(decide, "Reject", "Fail to Reject")
 }
 
+# dont use this one - use the one in helper function 
 # function to plot qq-plot & qq-line
-plot_qq = function(model, pointcol = "dodgerblue", linecol = "darkorange") {
-  qqnorm(resid(model), col = pointcol, pch = 20, cex = 1.5)
-  qqline(resid(model), col = linecol, lwd = 2)
-}
+#plot_qq = function(model, pointcol = "dodgerblue", linecol = "darkorange") {
+#  qqnorm(resid(model), col = pointcol, pch = 20, cex = 1.5)
+#  qqline(resid(model), col = linecol, lwd = 2)
+#}
 
 # function to get decision of Shapiro-Wilk Test (for normality of error term)  
 get_sw_decision = function(model, alpha) {
@@ -159,6 +162,43 @@ diagnostics = function(model,
 }
 
 ```
+
+**Function   : **`model_plots` will generate model plots such as Q-Q plot or fitted vs. residuals plot
+
+**Inputs: **
+
+*models      : * A list of models to generate the plots
+
+**Returns    : ** None
+
+```{r}
+# ========================================================================================================================================= #
+## 3. HELPER FUNCTION ##
+
+
+# function to plot fitted vs. residual plot to test homoscedasticity - uniform variation in error plotted against the fitted value or response  
+plot_fitted_resid = function(model, model_name, stitle, pointcol = "dodgerblue", linecol = "darkorange" ) {
+  plot(fitted(model), resid(model), col = pointcol, pch = 20, cex = 1.5, xlab = "Fitted", ylab = "Residuals", main = "Fitted vs. Residual", sub = model_name)
+  abline(h = 0, col = linecol, lwd = 2)
+}
+
+# function to plot qq-plot & qq-line
+plot_qq = function(model, model_name, pointcol = "dodgerblue", linecol = "darkorange") {
+  qqnorm(resid(model), col = pointcol, pch = 20, cex = 1.5, main = "Q-Q Plot", sub = model_name)
+  qqline(resid(model), col = linecol, lwd = 2)
+}
+
+model_plots = function(models, model_names){
+  n_mod = length(models)
+  
+  for (i in 1:n_mod){
+    par(mfrow=c(1,2))
+    plot_fitted_resid(models[[i]], model_names[[i]])
+    plot_qq(models[[i]], model_names[[i]])
+  }
+}
+```
+
 
 
 ## EDA
