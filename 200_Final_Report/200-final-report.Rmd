@@ -327,7 +327,7 @@ When we reviewed the pairs plot and for response variable `log(median_house_valu
 - Variable `housing_median_age` has lot of variance and needs variable transformation.
 - Either one of `latitude` or `longitude` can be eliminated due to high partial collinearity.
 
-At this point, we will return to model building with the above hypotheses coming into play in later models. In order to ensure that we selected the model that minimized test RMSE without sacrificing interpretability, we decided to conduct a backward search using BIC. We decided to utilized BIC over AIC because BIC's penalty accounts for penalizing larger models. Using the `step()` function for our BIC backward selection with the full additive model as our base, we found that the resulting model did not remove any predictors The implication is the removal of the predictors would result in an unacceptable increase in the BIC.
+At this point, we will return to model building with the above hypotheses coming into play in later models. In order to ensure that we selected the model that minimized test RMSE without sacrificing interpretability, we decided to conduct a backward search using BIC. We decided to utilized BIC over AIC because BIC's penalty accounts for penalizing larger models. Using the `step()` function for our BIC backward selection with the full additive model as our base, we found that the resulting model removed the predictor `total_rooms`. The implication is the removal of `total_rooms` would result in a smaller model with better predictive power. Since the step-wise search stopped after removing a single variable, the algorithm found that removing any additional variables would result in an unacceptable increase in the BIC.
 
 ```{r}
 cahoudta_add_bckwd_bic_model = step(cahoudta_full_add_model, 
@@ -483,29 +483,32 @@ cahoudta_model_names[[9]] = "cahoudta_2int_txfd_model"
 model_performance_metrics(cahoudta_models, 
                           cahoudta_model_names, 
                           ca_housing_data.te)
+
+#Final_selected_model
+final_selected_model <- cahoudta_add_bckwd_bic_model
 ```
 
-As mentioned throughout the narrative, our first model `cahoudta_full_add_model` had surprisingly good performance at the outset and became the model to beat.
+As mentioned throughout the narrative, our first model `cahoudta_full_add_model` had surprisingly good performance at the outset and became the model to beat. However, as visible from the results above, the backward BIC search did help in reducing number of $\beta$ parameters by 1. Both the full model `cahoudta_full_add_model` and backward step wise search model `cahoudta_add_bckwd_bic_model` had similar train RMSE, test RMSE, and adjusted $R^2$. Since the model `cahoudta_add_bckwd_bic_model` is smaller,  it was a strong contender for selection after creating only two models, but we also wanted to remove collinear variables, explore variable transformations, and leverage interaction terms.
 
-As visible from the results above, the backward BIC search did not help in reducing number of $\beta$ parameters. Both the full model `cahoudta_full_add_model` and backward step wise search model `cahoudta_add_bckwd_bic_model` has same number of parameters. When we tried to reduce the variables manually by removing  both `latitude` and `longitude`, we found the reductions in the adjusted $R^2$ and increase in train RMSE unacceptable. Trying more complex models like two-way interactions and polynomials did not provide significant pay off in improvements to adjusted $R^2$ or decreases in train RMSE. Finally, the variable transformation model appeared to have a very good fit of the training data set in both the value of the adjusted $R^2$ and train RMSE.
+When we tried to reduce the variables manually by removing  both `latitude` and `longitude`, we found the reductions in the adjusted $R^2$ and increase in train RMSE unacceptable. Trying more complex models like two-way interactions and polynomials did not provide significant pay off in improvements to adjusted $R^2$ or decreases in train RMSE. Finally, the variable transformation model appeared to have a very good fit of the training data set in both the value of the adjusted $R^2$ and train RMSE.
 
-Our group had decided at the outset that the minimization of test RMSE, an interpretable model, and a reasonable adjusted $R^2$ were the essential trade-offs when selecting a model. Looking at test RMSE in particular, we immediately eliminated the possibility of using the transformed variable model. The models with the lowest test RMSE had over 40 coefficients, which would make analysis challenging. Ultimately, the model we started with had the best combination of adjusted $R^2$, low enough test RMSE, and a reasonable number of coefficients. Below, we will discuss the selected model further.
+Our group had decided at the outset that the minimization of test RMSE, an interpretable model, and a reasonable adjusted $R^2$ were the essential trade-offs when selecting a model. Looking at test RMSE in particular, we immediately eliminated the possibility of using the transformed variable model. The models with the lowest test RMSE had over 40 coefficients, which would make analysis challenging. Ultimately, the model `cahoudta_add_bckwd_bic_model` had the best combination of adjusted $R^2$, low enough test RMSE, and a reasonable number of coefficients. Below, we will discuss the selected model further.
 
 ## Results
 
-During the model building process, we explored **`r n_models`** different models for our housing data set. Recall that he main goal for this project was to effectively model the California Housing Data and identify the predictors which help explain the `median_house_value` response variable. Based on table [Comparative Model Performance Metrics](#comparative-model-performance-metrics) we select model `cahoudta_full_add_model` as our best model for purpose of this project. 
+During the model building process, we explored **`r n_models`** different models for our housing data set. Recall that he main goal for this project was to effectively model the California Housing Data and identify the predictors which help explain the `median_house_value` response variable. Based on table [Comparative Model Performance Metrics](#comparative-model-performance-metrics) we select model `cahoudta_add_bckwd_bic_model` as our best model for purpose of this project. 
 
 The final selected model has following features:
 
-- High `adjusted r-squared` of **0.7597**
-- Lowest `Test RMSE` of **0.3407**
-- Lowest `Train RMSE` of **0.2687**
-- Due to low number of coefficients **(11)** it is easy to interpret and computationally efficient.
+- High *adjusted $R^2$* of **0.7596**
+- Lowest *Test RMSE* of **0.3407**
+- Lowest *Train RMSE* of **0.26878*
+- Lowest number of coefficients **(10)** makes this model easy to interpret and computationally efficient.
 
-The following are all the predictors for the model `cahoudta_full_add_model` with test statistics and p-values.
+The following are all the predictors for the model `cahoudta_add_bckwd_bic_model` with test statistics and p-values.
 
 ```{r}
-coef_matrix <- data.frame(coef(summary(cahoudta_full_add_model)))
+coef_matrix <- data.frame(coef(summary(final_selected_model)))
 names(coef_matrix) <- c("Estimate", "Standard Error", "t Value", "P Value")
 kable(coef_matrix, digits = 5, caption = "Table of Predictors and Test Statistics")
 ```
@@ -515,7 +518,7 @@ We also ran all the standard diagnostics on this model.
 ```{r fig.height=12, fig.width=12}
 par(mfrow=c(2, 2))
 
-plot(cahoudta_full_add_model,
+plot(final_selected_model,
      pch = 20,
      col = green_color)
 ```
@@ -526,7 +529,7 @@ plot(cahoudta_full_add_model,
 
 ## Discussion
 
-We selected the full additive model for modeling `median_house_value`. Our model provides utility in explaining the relationship between how features of a California Block Group relate to the log of the median house value of the block group. In this section, we will discuss how this model is useful and interpret the model's $\hat{\beta}$ parameters.
+We selected the model from backward selection with the base as the full additive model for modeling `median_house_value`. Our model provides utility in explaining the relationship between how features of a California Block Group relate to the log of the median house value of the block group. In this section, we will discuss how this model is useful and interpret the model's $\hat{\beta}$ parameters.
 
 ### Utility of Model
 
@@ -537,7 +540,7 @@ As mentioned in above in [Limitations of the Data](#limitations-of-the-data), ou
 There are several things to notice about the below table of $\hat{\beta}$'s when discussing the model. The first is to note is that since we did a log transformation of the response, we will need to exponentiate the $\hat{\beta}$'s to correctly interpret the multiplicative impact of each of these parameters on `median_house_value`. For ease of interpretability, we exponentiated the coefficients then subtracted 1 (because a coefficient less than 1 should be interpreted as a percent decrease in the average `median_house_value`, whereas a coefficient greater than 1 should be interpreted as a percent increase in the average `median_house_value`). 
 
 ```{r}
-coefs_exponeniated <- data.frame("Betas Exponeniated" = (exp(coef(cahoudta_full_add_model)) - 1) * 100)
+coefs_exponeniated <- data.frame("Betas Exponeniated" = (exp(coef(final_selected_model)) - 1) * 100)
 kable(coefs_exponeniated)
 ```
 
