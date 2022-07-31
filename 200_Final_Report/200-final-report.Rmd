@@ -3,10 +3,10 @@ title: "STAT 420 Final Report: Modeling California Housing Prices"
 author: " "
 date: ''
 output:
-  pdf_document: default
   html_document: 
     theme: readable
     toc: yes  
+  pdf_document: default
 urlcolor: cyan
 ---
 
