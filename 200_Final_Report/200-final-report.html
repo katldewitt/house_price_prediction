@@ -922,13 +922,13 @@ the full fitted additive model. Given this model includes all variables,
 we wanted to ascertain if we would be introducing issues using highly
 collinear variables. To evaluate this empirically, we calculated the
 variable inflation factor (VIF) of the predictors and printed those with
-a a VIF greater than 5.</p>
+a VIF greater than 5.</p>
 <pre class="r"><code>high_vif_predictors = vif(cahoudta_full_add_model) &gt; 5
 high_vif_pred_vals = vif(cahoudta_full_add_model)[high_vif_predictors]
 sort(high_vif_pred_vals, decreasing = TRUE)</code></pre>
 <pre><code>##    latitude   longitude  households total_rooms  population 
 ##       22.32       19.84       13.55       11.23        7.35</code></pre>
-<p>Based on the above VIF values, we believed the predictors
+<p>Based on the above VIF values, we concluded the predictors
 <code>households</code> and <code>latitude</code> could be dropped.
 However, we ultimately found these predictors were consistently selected
 in procedures that we used to optimize the model. Keeping these
@@ -963,7 +963,7 @@ decided to utilized BIC over AIC because BIC’s penalty accounts for
 penalizing larger models. Using the <code>step()</code> function for our
 BIC backward selection with the full additive model as our base, we
 found that the resulting model removed the predictor
-<code>total_rooms</code>. The implication is the removal of
+<code>total_rooms</code>. The implication is that the removal of
 <code>total_rooms</code> would result in a smaller model with better
 predictive power. Since the step-wise search stopped after removing a
 single variable, the algorithm found that removing any additional
@@ -976,7 +976,7 @@ variables would result in an unacceptable increase in the BIC.</p>
 each predictor. Our thinking here was that we could use the full
 interaction model as a basis for another backward search. Given the
 number of terms in the two way interaction model, this model sacrifices
-interpretability for the sake of lower train RMSE and higher R^2.</p>
+interpretability for the sake of lower train RMSE and higher <span class="math inline">\(R^2\)</span>.</p>
 <pre class="r"><code>cahoudta_2int_add_model = lm(log(median_house_value) ~ . ^ 2, 
                              data = ca_housing_data.tr)
 
@@ -1266,7 +1266,7 @@ selected model further.</p>
 <div id="results" class="section level2">
 <h2>Results</h2>
 <p>During the model building process, we explored <strong>9</strong>
-different models for our housing data set. Recall that he main goal for
+different models for our housing data set. Recall that the main goal for
 this project was to effectively model the California Housing Data and
 identify the predictors which help explain the
 <code>median_house_value</code> response variable. Based on table <a href="#comparative-model-performance-metrics">Comparative Model
@@ -1396,11 +1396,11 @@ are from the 1990 Census, which means we are not using this model for
 prediction. Now that we have developed the best model with the available
 predictors, we can utilize the model to explain the relationship of
 geography to the <code>medain_house_value</code> of a block group. The
-below analysis is useful to understand to provide historical
-contextualization to the current CA real estate market. We can also use
-this model to ask questions about the directionality of the impact of
-the different predictors. In other words, our model allows us to answer
-questions like “do higher income block groups have higher average
+following section is useful to understand historical context of the
+current California real estate market. We can also use this model to ask
+questions about the directionality of the impact of the different
+predictors. In other words, our model allows us to answer questions like
+“do higher income block groups have higher average
 <code>median_house_values</code>?”</p>
 </div>
 <div id="interpretation-of-model-in-context-of-ca-block-groups-in-1990s" class="section level3">
@@ -1415,13 +1415,13 @@ less than 1 should be interpreted as a percent decrease in the average
 <code>median_house_value</code>, whereas a coefficient greater than 1
 should be interpreted as a percent increase in the average
 <code>median_house_value</code>).</p>
-<pre class="r"><code>coefs_exponeniated &lt;- data.frame(&quot;Betas Exponeniated&quot; = (exp(coef(final_selected_model)) - 1) * 100)
+<pre class="r"><code>coefs_exponeniated &lt;- data.frame(&quot;Betas Exponentiated&quot; = (exp(coef(final_selected_model)) - 1) * 100)
 kable(coefs_exponeniated)</code></pre>
 <table>
 <thead>
 <tr class="header">
 <th align="left"></th>
-<th align="right">Betas.Exponeniated</th>
+<th align="right">Betas.Exponentiated</th>
 </tr>
 </thead>
 <tbody>

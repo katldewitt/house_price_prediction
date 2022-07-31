@@ -303,7 +303,7 @@ cahoudta_full_add_model = lm(log(median_house_value) ~ .,
                              subset = (cd_full_add_mod <= 4 / length(cd_full_add_mod)))
 ```
 
-After making this adjustment, we investigated multi-collinearity in the full fitted additive model. Given this model includes all variables, we wanted to ascertain if we would be introducing issues using highly collinear variables. To evaluate this empirically, we calculated the variable inflation factor (VIF) of the predictors and printed those with a a VIF greater than 5.
+After making this adjustment, we investigated multi-collinearity in the full fitted additive model. Given this model includes all variables, we wanted to ascertain if we would be introducing issues using highly collinear variables. To evaluate this empirically, we calculated the variable inflation factor (VIF) of the predictors and printed those with a VIF greater than 5.
 
 ```{r}
 high_vif_predictors = vif(cahoudta_full_add_model) > 5
@@ -311,7 +311,7 @@ high_vif_pred_vals = vif(cahoudta_full_add_model)[high_vif_predictors]
 sort(high_vif_pred_vals, decreasing = TRUE)
 ```
 
-Based on the above VIF values, we believed the predictors `households` and `latitude` could be dropped. However, we ultimately found these predictors were consistently selected in procedures that we used to optimize the model. Keeping these collinear variables in the final selected model is a limitation of our final model.
+Based on the above VIF values, we concluded the predictors `households` and `latitude` could be dropped. However, we ultimately found these predictors were consistently selected in procedures that we used to optimize the model. Keeping these collinear variables in the final selected model is a limitation of our final model.
 
 We also reviewed the `pairs()` function with a new column for the logged response value to ensure we were aware of collinearity. The secondary reason for re-running this plot during model selection was to generate ideas about the relationships between the predictors and the response. For instance, if we had seen a clearly quadratic relationship, we could have used a polynomial term to improve fit.
 
@@ -327,7 +327,7 @@ When we reviewed the pairs plot and for response variable `log(median_house_valu
 - Variable `housing_median_age` has lot of variance and needs variable transformation.
 - Either one of `latitude` or `longitude` can be eliminated due to high partial collinearity.
 
-At this point, we will return to model building with the above hypotheses coming into play in later models. In order to ensure that we selected the model that minimized test RMSE without sacrificing interpretability, we decided to conduct a backward search using BIC. We decided to utilized BIC over AIC because BIC's penalty accounts for penalizing larger models. Using the `step()` function for our BIC backward selection with the full additive model as our base, we found that the resulting model removed the predictor `total_rooms`. The implication is the removal of `total_rooms` would result in a smaller model with better predictive power. Since the step-wise search stopped after removing a single variable, the algorithm found that removing any additional variables would result in an unacceptable increase in the BIC.
+At this point, we will return to model building with the above hypotheses coming into play in later models. In order to ensure that we selected the model that minimized test RMSE without sacrificing interpretability, we decided to conduct a backward search using BIC. We decided to utilized BIC over AIC because BIC's penalty accounts for penalizing larger models. Using the `step()` function for our BIC backward selection with the full additive model as our base, we found that the resulting model removed the predictor `total_rooms`. The implication is that the removal of `total_rooms` would result in a smaller model with better predictive power. Since the step-wise search stopped after removing a single variable, the algorithm found that removing any additional variables would result in an unacceptable increase in the BIC.
 
 ```{r}
 cahoudta_add_bckwd_bic_model = step(cahoudta_full_add_model, 
@@ -335,7 +335,7 @@ cahoudta_add_bckwd_bic_model = step(cahoudta_full_add_model,
                                     k = log(n_tr_rows),
                                     trace = 0)
 ```
-Our next attempt was to create a model with two-way interactions for each predictor. Our thinking here was that we could use the full interaction model as a basis for another backward search. Given the number of terms in the two way interaction model, this model sacrifices interpretability for the sake of lower train RMSE and higher R^2.
+Our next attempt was to create a model with two-way interactions for each predictor. Our thinking here was that we could use the full interaction model as a basis for another backward search. Given the number of terms in the two way interaction model, this model sacrifices interpretability for the sake of lower train RMSE and higher $R^2$.
 
 ```{r}
 cahoudta_2int_add_model = lm(log(median_house_value) ~ . ^ 2, 
@@ -496,7 +496,7 @@ Our group had decided at the outset that the minimization of test RMSE, an inter
 
 ## Results
 
-During the model building process, we explored **`r n_models`** different models for our housing data set. Recall that he main goal for this project was to effectively model the California Housing Data and identify the predictors which help explain the `median_house_value` response variable. Based on table [Comparative Model Performance Metrics](#comparative-model-performance-metrics) we select model `cahoudta_add_bckwd_bic_model` as our best model for purpose of this project. 
+During the model building process, we explored **`r n_models`** different models for our housing data set. Recall that the main goal for this project was to effectively model the California Housing Data and identify the predictors which help explain the `median_house_value` response variable. Based on table [Comparative Model Performance Metrics](#comparative-model-performance-metrics) we select model `cahoudta_add_bckwd_bic_model` as our best model for purpose of this project. 
 
 The final selected model has following features:
 
@@ -533,14 +533,14 @@ We selected the model from backward selection with the base as the full additive
 
 ### Utility of Model
 
-As mentioned in above in [Limitations of the Data](#limitations-of-the-data), our data are from the 1990 Census, which means we are not using this model for prediction. Now that we have developed the best model with the available predictors, we can utilize the model to explain the relationship of geography to the `medain_house_value` of a block group. The below analysis is useful to understand to provide historical contextualization to the current CA real estate market. We can also use this model to ask questions about the directionality of the impact of the different predictors. In other words, our model allows us to answer questions like "do higher income block groups have higher average `median_house_values`?" 
+As mentioned in above in [Limitations of the Data](#limitations-of-the-data), our data are from the 1990 Census, which means we are not using this model for prediction. Now that we have developed the best model with the available predictors, we can utilize the model to explain the relationship of geography to the `medain_house_value` of a block group. The following section is useful to understand historical context of the current California real estate market. We can also use this model to ask questions about the directionality of the impact of the different predictors. In other words, our model allows us to answer questions like "do higher income block groups have higher average `median_house_values`?" 
 
 ### Interpretation of Model in Context of CA Block Groups in 1990s
 
 There are several things to notice about the below table of $\hat{\beta}$'s when discussing the model. The first is to note is that since we did a log transformation of the response, we will need to exponentiate the $\hat{\beta}$'s to correctly interpret the multiplicative impact of each of these parameters on `median_house_value`. For ease of interpretability, we exponentiated the coefficients then subtracted 1 (because a coefficient less than 1 should be interpreted as a percent decrease in the average `median_house_value`, whereas a coefficient greater than 1 should be interpreted as a percent increase in the average `median_house_value`). 
 
 ```{r}
-coefs_exponeniated <- data.frame("Betas Exponeniated" = (exp(coef(final_selected_model)) - 1) * 100)
+coefs_exponeniated <- data.frame("Betas Exponentiated" = (exp(coef(final_selected_model)) - 1) * 100)
 kable(coefs_exponeniated)
 ```
 
