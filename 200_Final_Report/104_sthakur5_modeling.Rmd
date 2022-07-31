@@ -329,32 +329,32 @@ model_performance_metrics(cahoudta_models,
                           ca_housing_data.te)
 ```
 
-As we can see from the results that the backward BIC search doesn't help in reducing number of beta parameters. Both the full model `cahoudta_full_add_model` and backward step wise search model `cahoudta_add_bckwd_bic_model` has same number of parameters i.e. 11. So we tried to reduce the train-test split to 50%-50%. Even after that the backward BIC search reduced only 1 parameter from 11 to 10 with very negligible loss in adjusted r-squared.
+As we can see from the results that the backward BIC search does help in reducing number of beta parameters by 1. Compared to the full additive model `cahoudta_full_add_model` and backward step wise search model `cahoudta_add_bckwd_bic_model` has one less parameter i.e. 10. To check if we can get as simpler model (less coefficients) we tried to change the train-test split to 50%-50%. But that did not help with reducing number of beta parameters.
 
-Having both `latitude` and `longitude` reduces the adjusted r-squared further and is not a good predictor combination.
+We do however note, that having both `latitude` and `longitude` reduces the adjusted r-squared further and is not a good predictor combination.
 
 
 ## Model Selection
 
-During the model building process, we explored **`r n_models`** different models for our housing data set. The main goal we had for this project was to effectively model the California Housing Data and identify the predictors which help explain the `median_house_value` response variable. Based on table [Comparative Model Performance Metrics](#comparative-model-performance-metrics) we select model `cahoudta_full_add_model` as our best model for purpose of this project. 
+During the model building process, we explored **`r n_models`** different models for our housing data set. The main goal we had for this project was to effectively model the California Housing Data and identify the predictors which help explain the `median_house_value` response variable. Based on table [Comparative Model Performance Metrics](#comparative-model-performance-metrics) we select model `cahoudta_add_bckwd_bic_model` as our best model for purpose of this project. 
 
 This model has following features:
 
-- High `adjusted r-squared` of **0.7597**
+- High `adjusted r-squared` of **0.7596**
 - Lowest `Test RMSE` of **0.3407**
-- Lowest `Train RMSE` of **0.2687**
-- Due to low number of coefficients **(11)** it is easy to interpret and computationally efficient.
+- Low `Train RMSE` of **0.2688**
+- Lowest number of coefficients **(10)** makes this model easy to interpret and computationally efficient.
 
-Following are all the predictors for the model `cahoudta_full_add_model` with test statistics and p-values.
+Following are all the predictors for the model `cahoudta_add_bckwd_bic_model` with test statistics and p-values.
 ```{r}
-tidy(cahoudta_full_add_model)
+tidy(cahoudta_add_bckwd_bic_model)
 ```
 
 We will also run all the standard diagnostics on this model.
 ```{r fig.height=12, fig.width=12}
 par(mfrow=c(2, 2))
 
-plot(cahoudta_full_add_model,
+plot(cahoudta_add_bckwd_bic_model,
      pch = 20,
      col = "lightgoldenrod2")
 ```
