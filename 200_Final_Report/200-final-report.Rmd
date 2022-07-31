@@ -213,7 +213,7 @@ ggplot(my_sf) +
                     title = "Ocean Proximity by Location")
 ```
 
-In the table below, the reader can see this column has 5 different categories. It is important to note that the `ISLAND` category has only 5 observations. During initial analysis, our team determined that `ISLAND` has a substantially higher average value of response variable `median_house_value` than the other categories as illustrated by the below boxplot. This fact is problematic for our purpose. We will be dropping the rows from data set with `ISLAND` category and coercing the predictor `ocean_proximity` to be categorical.
+In the table below, the reader can see this column has 5 different categories. It is important to note that the `ISLAND` category has only 5 observations. During initial analysis, our team determined that `ISLAND` has a substantially higher average value of response variable `median_house_value` than the other categories as illustrated by the below box-plot. This fact is problematic for our purpose. We will be dropping the rows from data set with `ISLAND` category and coercing the predictor `ocean_proximity` to be categorical.
 
 ```{r}
 #Ocean proximity - only 5 in island, and substantially different. I propose removing from consideration to avoid overfitting depending on an unlucky test/train split
@@ -303,7 +303,7 @@ cahoudta_full_add_model = lm(log(median_house_value) ~ .,
                              subset = (cd_full_add_mod <= 4 / length(cd_full_add_mod)))
 ```
 
-After making this adjustment, we investigated multi-collinearity in the full fitted additive model. Given this model includes all variables, we wanted to ascertain if we would be introducing issues using highly collinear variables. To evaluate this empirically, we calculated the variable inflation facotr (VIF) of the predictors and printed those with a a VIF greater than 5.
+After making this adjustment, we investigated multi-collinearity in the full fitted additive model. Given this model includes all variables, we wanted to ascertain if we would be introducing issues using highly collinear variables. To evaluate this empirically, we calculated the variable inflation factor (VIF) of the predictors and printed those with a a VIF greater than 5.
 
 ```{r}
 high_vif_predictors = vif(cahoudta_full_add_model) > 5
@@ -489,7 +489,7 @@ As mentioned throughout the narrative, our first model `cahoudta_full_add_model`
 
 As visible from the results above, the backward BIC search did not help in reducing number of $\beta$ parameters. Both the full model `cahoudta_full_add_model` and backward step wise search model `cahoudta_add_bckwd_bic_model` has same number of parameters. When we tried to reduce the variables manually by removing  both `latitude` and `longitude`, we found the reductions in the adjusted $R^2$ and increase in train RMSE unacceptable. Trying more complex models like two-way interactions and polynomials did not provide significant pay off in improvements to adjusted $R^2$ or decreases in train RMSE. Finally, the variable transformation model appeared to have a very good fit of the training data set in both the value of the adjusted $R^2$ and train RMSE.
 
-Our group had decided at the outset that the minimization of test RMSE, an interpretable model, and a reasonable adjusted $R^2$ were the essential tradeoffs when selecting a model. Looking at test RMSE in particular, we immediately eliminated the possibility of using the transformed variable model. The models with the lowest test RMSE had over 40 coefficients, which would make analysis challenging. Ultimately, the model we started with had the best combination of adjusted $R^2$, low enough test RMSE, and a reasonable number of coefficients. Below, we will discuss the selected model further.
+Our group had decided at the outset that the minimization of test RMSE, an interpretable model, and a reasonable adjusted $R^2$ were the essential trade-offs when selecting a model. Looking at test RMSE in particular, we immediately eliminated the possibility of using the transformed variable model. The models with the lowest test RMSE had over 40 coefficients, which would make analysis challenging. Ultimately, the model we started with had the best combination of adjusted $R^2$, low enough test RMSE, and a reasonable number of coefficients. Below, we will discuss the selected model further.
 
 ## Results
 
@@ -534,7 +534,7 @@ As mentioned in above in [Limitations of the Data](#limitations-of-the-data), ou
 
 ### Interpretation of Model in Context of CA Block Groups in 1990s
 
-There are several things to notice about the below table of $\hat{\beta}$'s when discussing the model. The first is to note is that since we did a log transformation of the response, we will need to exponeniate the $\hat{\beta}$'s to correctly interpret the multiplicative impact of each of these parameters on `median_house_value`. For ease of interpretability, we exponeniated the coeficients then subtracted 1 (because a coefficient less than 1 should be interpreted as a percent decrease in the average `median_house_value`, whereas a coefficient greater than 1 should be interpreted as a percent increase in the average `median_house_value`). 
+There are several things to notice about the below table of $\hat{\beta}$'s when discussing the model. The first is to note is that since we did a log transformation of the response, we will need to exponentiate the $\hat{\beta}$'s to correctly interpret the multiplicative impact of each of these parameters on `median_house_value`. For ease of interpretability, we exponentiated the coefficients then subtracted 1 (because a coefficient less than 1 should be interpreted as a percent decrease in the average `median_house_value`, whereas a coefficient greater than 1 should be interpreted as a percent increase in the average `median_house_value`). 
 
 ```{r}
 coefs_exponeniated <- data.frame("Betas Exponeniated" = (exp(coef(cahoudta_full_add_model)) - 1) * 100)
