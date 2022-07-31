@@ -962,9 +962,12 @@ interpretability, we decided to conduct a backward search using BIC. We
 decided to utilized BIC over AIC because BIC’s penalty accounts for
 penalizing larger models. Using the <code>step()</code> function for our
 BIC backward selection with the full additive model as our base, we
-found that the resulting model did not remove any predictors The
-implication is the removal of the predictors would result in an
-unacceptable increase in the BIC.</p>
+found that the resulting model removed the predictor
+<code>total_rooms</code>. The implication is the removal of
+<code>total_rooms</code> would result in a smaller model with better
+predictive power. Since the step-wise search stopped after removing a
+single variable, the algorithm found that removing any additional
+variables would result in an unacceptable increase in the BIC.</p>
 <pre class="r"><code>cahoudta_add_bckwd_bic_model = step(cahoudta_full_add_model, 
                                     direction = &quot;backward&quot;,
                                     k = log(n_tr_rows),
@@ -1228,13 +1231,17 @@ model_performance_metrics(cahoudta_models,
 final_selected_model &lt;- cahoudta_add_bckwd_bic_model</code></pre>
 <p>As mentioned throughout the narrative, our first model
 <code>cahoudta_full_add_model</code> had surprisingly good performance
-at the outset and became the model to beat.</p>
-<p>As visible from the results above, the backward BIC search did not
-help in reducing number of <span class="math inline">\(\beta\)</span>
-parameters. Both the full model <code>cahoudta_full_add_model</code> and
-backward step wise search model
-<code>cahoudta_add_bckwd_bic_model</code> has same number of parameters.
-When we tried to reduce the variables manually by removing both
+at the outset and became the model to beat. However, as visible from the
+results above, the backward BIC search did help in reducing number of
+<span class="math inline">\(\beta\)</span> parameters by 1. Both the
+full model <code>cahoudta_full_add_model</code> and backward step wise
+search model <code>cahoudta_add_bckwd_bic_model</code> had similar train
+RMSE, test RMSE, and adjusted <span class="math inline">\(R^2\)</span>.
+Since the model <code>cahoudta_add_bckwd_bic_model</code> is smaller, it
+was a strong contender for selection after creating only two models, but
+we also wanted to remove collinear variables, explore variable
+transformations, and leverage interaction terms.</p>
+<p>When we tried to reduce the variables manually by removing both
 <code>latitude</code> and <code>longitude</code>, we found the
 reductions in the adjusted <span class="math inline">\(R^2\)</span> and
 increase in train RMSE unacceptable. Trying more complex models like
@@ -1249,10 +1256,11 @@ RMSE, an interpretable model, and a reasonable adjusted <span class="math inline
 selecting a model. Looking at test RMSE in particular, we immediately
 eliminated the possibility of using the transformed variable model. The
 models with the lowest test RMSE had over 40 coefficients, which would
-make analysis challenging. Ultimately, the model we started with had the
-best combination of adjusted <span class="math inline">\(R^2\)</span>,
-low enough test RMSE, and a reasonable number of coefficients. Below, we
-will discuss the selected model further.</p>
+make analysis challenging. Ultimately, the model
+<code>cahoudta_add_bckwd_bic_model</code> had the best combination of
+adjusted <span class="math inline">\(R^2\)</span>, low enough test RMSE,
+and a reasonable number of coefficients. Below, we will discuss the
+selected model further.</p>
 </div>
 </div>
 <div id="results" class="section level2">
