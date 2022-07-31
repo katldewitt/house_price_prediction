@@ -338,9 +338,9 @@ cahoudta_2int_bckwd_bic_model = step(cahoudta_2int_add_model,
 
 We will run pairs plot to check any obvious trends in predictors compared to the response variable `median_house_value`.
 ```{r fig.height=8, fig.width=12}
-pairs(subset(ca_housing_data.tr, 
+pairs(subset(cbind(ca_housing_data.tr, log(ca_housing_data.tr$median_house_value)), 
              select = -ocean_proximity), 
-      col = "orchid2")
+      col = green_color)
 ```
 
 Based on pairs plot and for response variable `median_house_value`
