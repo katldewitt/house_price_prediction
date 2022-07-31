@@ -153,7 +153,7 @@ As part of data cleaning, we plotted the `median_house_value` against latitude a
 my_sf <- st_as_sf(ca_housing_data, coords = c('longitude', 'latitude'))
 my_sf <- st_set_crs(my_sf, value = 4326)
 
-ggplot(my_sf) + 
+hs_value_plot <- ggplot(my_sf) + 
   geom_sf(aes(color = median_house_value)) +
               labs( y = "Longitude", 
                     x = "Latitude",
@@ -161,6 +161,8 @@ ggplot(my_sf) +
   scale_colour_gradient2(low = green_color,
     midpoint = median(ca_housing_data$median_house_value),
     high = "#D55E00") 
+
+hs_value_plot
 ```
 
 We also generated histograms for all relevant predictors. Please note that not all EDA was included in this report; additional code from EDA can be found on our [GitHub Repo for All Project Related Code]. The linked section includes the link and describes the relevant .rmd files that were out of scope of this report.
@@ -497,11 +499,8 @@ names(coef_matrix) <- c("Estimate", "Standard Error", "t Value", "P Value")
 kable(coef_matrix, digits = 5, caption = "Table of Predictors and Test Statistics")
 ```
 
-There are several things to notice about the above table when discussing the model. The first is to note that our base level for `ocean_proximity` is "<1H OCEAN". The implication is that the average `median_house_value` of a block group decreases for any other `ocean_proximity`.   
 
-```{r}
-coefs_exponeniated <- (exp(coef(cahoudta_full_add_model)) - 1) * 100
-```
+
 
 
 We also ran all the standard diagnostics on this model.
@@ -515,13 +514,35 @@ plot(cahoudta_full_add_model,
 ```
 
 
-### Chosen Model
+
+
 
 ## Discussion
 
 ### Utility of Model
 
 > section should contain discussion of your results and should frame your results in the context of the data. How is your final model useful?
+
+### Interpretation of Model in Context of CA Block Groups in 1990s
+
+There are several things to notice about the below table of betas when discussing the model. The first is to note is that since we did a log transformation of the response, we will need to exponeniate the $\beta$'s to correctly interpret the multiplicative impact of each of these parameters on `median_house_value`. For ease of interpretability, we exponeniated the coeficients then subtracted 1 (because a coefficient less than 1 should be interpreted as a percent decrease in the average `median_house_value`, whereas a coefficient greater than 1 should be interpreted as a percent increase in the average `median_house_value`). 
+
+```{r}
+coefs_exponeniated <- data.frame("Betas Exponeniated" = (exp(coef(cahoudta_full_add_model)) - 1) * 100)
+kable(coefs_exponeniated)
+```
+
+Next, we discuss the role geography played in `median_house_value`. For the purpose of discussions, we included once again the graph of `median_house_value` based on latitude and longitude to allow the reader to review the model's findings against the geographical spread of the response variable.
+
+```{r}
+hs_value_plot
+```
+
+Please note that our base level for `ocean_proximity` is "<1H OCEAN". The implication is that the average `median_house_value` of a block group decreases for any other `ocean_proximity`. This is not surprising based on the above graphic where we see discrete clusters of high value houses in San Francisco and Los Angeles. The model found that blocks classified as "INLAND" had a `r abs(coefs_exponeniated["ocean_proximityINLAND",])`% decrease in average `median_house_value` relative to the blocks classified as "<1H OCEAN". 
+
+The other two geographical variables, latitude and longitude, also have interesting interpretations based on our priors expecting geography to play a major role in price in 1990 CA block group house value. Specifically, for every 1 unit increase in latitude (moving Westward), we see a `r abs(coefs_exponeniated["latitude",])`% decrease in `median_house_value`. Similarly,  for every 1 unit increase in longitude (moving North), we see a `r abs(coefs_exponeniated["longitude",])`% decrease in `median_house_value`.
+
+The other key $\beta$ to call attention to is that for `median_income`. For every 1 unit increase in median income, we see `r abs(coefs_exponeniated["median_income",])`% increase in the `median_house_value`. In other words, the model found that blocks with higher incomes would have higher values of `median_house_value`. 
 
 ### Future Directions and Lessons Learned
 
@@ -534,6 +555,7 @@ plot(cahoudta_full_add_model,
 <!TODO: add details in the appendix on model selection and possibly EDA>
 
 ### GitHub Repo for All Project Related Code
+
 
 ### Authors
 
