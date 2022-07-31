@@ -303,56 +303,61 @@ cahoudta_full_add_model = lm(log(median_house_value) ~ .,
                              subset = (cd_full_add_mod <= 4 / length(cd_full_add_mod)))
 ```
 
-Checking if there is multi-collinearity in the full fitted additive model. Following code snippet outputs all the predictors which has high variation inflation factors.
+After making this adjustment, we investigated multi-collinearity in the full fitted additive model. Given this model includes all variables, we wanted to ascertain if we would be introducing issues using highly collinear variables. To evaluate this empirically, we calculated the variable inflation facotr (VIF) of the predictors and printed those with a a VIF greater than 5.
+
 ```{r}
 high_vif_predictors = vif(cahoudta_full_add_model) > 5
 high_vif_pred_vals = vif(cahoudta_full_add_model)[high_vif_predictors]
-sort(high_vif_pred_vals)
+sort(high_vif_pred_vals, decreasing = TRUE)
 ```
 
-Based on variable inflation factors the predictors `households` and `latitude` can be dropped. 
+Based on the above VIF values, we believed the predictors `households` and `latitude` could be dropped. However, we ultimately found these predictors were consistently selected in procedures that we used to optimize the model. Keeping these collinear variables in the final selected model is a limitation of our final model.
 
-Lets try backward BIC search from the full additive model.
-```{r}
-cahoudta_add_bckwd_bic_model = step(cahoudta_full_add_model, 
-                                    direction = "backward",
-                                    k = log(n_tr_rows),
-                                    trace = 0)
-```
+We also reviewed the `pairs()` function with a new column for the logged response value to ensure we were aware of collinearity. The secondary reason for re-running this plot during model selection was to generate ideas about the relationships between the predictors and the response. For instance, if we had seen a clearly quadratic relationship, we could have used a polynomial term to improve fit.
 
-Lets try two way interaction full additive model.
-```{r}
-cahoudta_2int_add_model = lm(log(median_house_value) ~ . ^ 2, 
-                             data = ca_housing_data.tr)
-
-```
-
-Lets try backward BIC search from two way interaction full additive model.
-```{r}
-cahoudta_2int_bckwd_bic_model = step(cahoudta_2int_add_model, 
-                                    direction = "backward",
-                                    k = log(n_tr_rows),
-                                    trace = 0)
-
-```
-
-We will run pairs plot to check any obvious trends in predictors compared to the response variable `median_house_value`.
 ```{r fig.height=8, fig.width=12}
 pairs(subset(cbind(ca_housing_data.tr, log(ca_housing_data.tr$median_house_value)), 
              select = -ocean_proximity), 
       col = green_color)
 ```
 
-Based on pairs plot and for response variable `median_house_value`
+When we reviewed the pairs plot and for response variable `log(median_house_value)`, we noticed the following observations:
 
 - Variables `median_income`, `households`, `total_rooms` have some polynomial relationship.
-
 - Variable `housing_median_age` has lot of variance and needs variable transformation.
-
 - Either one of `latitude` or `longitude` can be eliminated due to high partial collinearity.
 
+At this point, we will return to model building with the above hypotheses coming into play in later models. In order to ensure that we selected the model that minimized test RMSE without sacrificing interpretability, we decided to conduct a backward search using BIC. We decided to utilized BIC over AIC because BIC's penalty accounts for penalizing larger models. Using the `step()` function for our BIC backward selection with the full additive model as our base, we found that the resulting model did not remove any predictors The implication is the removal of the predictors would result in an unacceptable increase in the BIC.
 
-Lets drop the predictors `households` and `latitude` with high VIF.
+```{r}
+cahoudta_add_bckwd_bic_model = step(cahoudta_full_add_model, 
+                                    direction = "backward",
+                                    k = log(n_tr_rows),
+                                    trace = 0)
+```
+Our next attempt was to create a model with two-way interactions for each predictor. Our thinking here was that we could use the full interaction model as a basis for another backward search. Given the number of terms in the two way interaction model, this model sacrifices interpretability for the sake of lower train RMSE and higher R^2.
+
+```{r}
+cahoudta_2int_add_model = lm(log(median_house_value) ~ . ^ 2, 
+                             data = ca_housing_data.tr)
+
+ncoefs_2int_add_model <- length(coef(cahoudta_2int_add_model))
+```
+
+We next tried backward BIC search from two way interaction full additive model.
+
+```{r}
+cahoudta_2int_bckwd_bic_model = step(cahoudta_2int_add_model, 
+                                    direction = "backward",
+                                    k = log(n_tr_rows),
+                                    trace = 0)
+ncoefs_2int_backward_bic_model <- length(coef(cahoudta_2int_bckwd_bic_model))
+```
+
+The resulting backward BIC model has `r ncoefs_2int_backward_bic_model` compared to the `r ncoefs_2int_add_model` coefficients with which the full interaction model started. Although this decrease is an improvement, interpretability of the model will still be very difficult.
+
+Our next set of models utilized our hypotheses about removing collinear variables to improve model performance. We started by dropping the predictors `households` and `latitude` due to their high VIF. The result was an additive model comprised of only low VIF predictors. However, the Adjusted $R^2$ value of this model dropped by about 0.1 relative to the previous models.
+
 ```{r}
 predictor_variables = colnames(ca_housing_data.tr)[-which(colnames(ca_housing_data.tr)
                                                           == "median_house_value")]
@@ -365,14 +370,16 @@ less_preds = paste0("log(median_house_value) ~ ",
 cahoudta_lowvif_add_mod = lm(formula = less_preds, data = ca_housing_data.tr)
 ```
 
-Lets add 2 way interaction for above model to check the performance.
+Due to the drop in the Adjusted $R^2$, we tried a model that added two-way interactions for the low VIF variables. Unfortunately, this did not substantially improve the R^2 or train RMSE.
+
 ```{r}
 less_preds_2int = paste0("log(median_house_value) ~ (", 
                          paste(smaller_predictors, collapse = " + "), ") ^ 2")
 cahoudta_lowvif_2int_mod = lm(formula = less_preds_2int, data = ca_housing_data.tr)
 ```
 
-To increase complexity, lets try a degree 2 polynomial for reduced predictors based on vif above. Also we have to exclude the categorical predictor `ocean_proximity` from polynomial formula.
+We held out hope for the low VIF predictors as a source of a good model. In fact, we tried to leverage a 2nd degree polynomial to see if the model would improve. Note that in creation of this model we had to exclude the categorical predictor `ocean_proximity` from polynomial formula. Sadly, the Adjusted R^2 improved by less than 0.01 for this addition in model complexity.
+
 ```{r}
 drop_cols = which(colnames(ca_housing_data.tr) == "median_house_value" | 
                     colnames(ca_housing_data.tr) == "households" | 
@@ -387,10 +394,10 @@ less_poly_preds = paste0(" + I(", paste(further_reduced_predictors,
 poly_formula = paste0(less_preds, less_poly_preds)
 message("Polynomial Formula: ", poly_formula)
 cahoudta_lowvif_2poly_mod = lm(formula = poly_formula, data = ca_housing_data.tr)
-# summary(cahoudta_lowvif_2poly_mod)$coef
 ```
 
-I will add back `latitude` and test if that gives better results.
+After having little to no success with removing the high VIF predictors, we decided to reinstate one of the collinear variables, `latitude`. This model with both `longitude` and `latitude` but without `households` lacked the performance requisite to justify its selection. Specifically, we saw that this model has a lower adjusted $R^2$ by 0.1 than the full additive model. Additionally, the train RMSE was 0.07 higher, which was in the range of the other models which had dropped both `latitude` and `households`.
+
 ```{r}
 drop_cols = which(colnames(ca_housing_data.tr) == "median_house_value" | 
                     colnames(ca_housing_data.tr) == "households")
@@ -402,7 +409,8 @@ message("Model 8: Formula: ", less_preds)
 cahoudta_lola_add_mod = lm(formula = less_preds, data = ca_housing_data.tr)
 ```
 
-Next we will transform predictors `population` and `total_rooms` to be normalized with predictor `households` and build a new model.
+Our final step was to attempt variable transformations to attempt to better capture the variance in the response variable. We transformed predictors `population` and `total_rooms` to be normalized with predictor `households`. <!TODO: Avi, can you add about your reasoning here?>
+
 ```{r}
 ca_housing_data.tr$pop_per_hh = (ca_housing_data.tr$population / 
                                    ca_housing_data.tr$households)
@@ -414,7 +422,8 @@ ca_housing_data.te$rooms_per_hh = (ca_housing_data.te$total_rooms /
                                      ca_housing_data.te$households)
 ```
 
-Fit a additive model with transformed variables and predictors without high variation inflation factors or collinearity.
+We fit a additive model with transformed variables and predictors without high variation inflation factors or collinearity. While both train RMSE and adjusted $R^2$ plummeted, when we reveled the test RMSE we found that this model was significantly overfit for our training data. The test RMSE of the model with transformed variables was nearly 5 times that of the other models. Our team learned a great deal about how some variable transformations can contribute a good training model based on observations of the data, but when extrapolated to unseen data, they can wreck havoc.
+
 ```{r}
 cahoudta_2int_txfd_model_cd = lm(log(median_house_value) ~ 
                                 (longitude + 
@@ -436,9 +445,12 @@ cahoudta_2int_txfd_model = lm(log(median_house_value) ~
                               subset = (cd_2int_txfd <= 4 / length(cd_2int_txfd)))
 ```
 
+After creating the 9th and final model, we recognized we were getting diminishing returns on additional iterations. At this point, we generated our evaluation criteria into a chart and discussed as a group what model we would like to select. 
+
 ### Comparative Model Performance Metrics
 
-We will now compare all the models to calculate and display the performance metrics.
+We next compared all the models to calculate and display the performance metrics.
+
 ```{r}
 cahoudta_models[[1]] = cahoudta_full_add_model
 cahoudta_model_names[[1]] = "cahoudta_full_add_model"
@@ -473,12 +485,11 @@ model_performance_metrics(cahoudta_models,
                           ca_housing_data.te)
 ```
 
-As we can see from the results that the backward BIC search doesn't help in reducing number of beta parameters. Both the full model `cahoudta_full_add_model` and backward step wise search model `cahoudta_add_bckwd_bic_model` has same number of parameters i.e. 11. So we tried to reduce the train-test split to 50%-50%. Even after that the backward BIC search reduced only 1 parameter from 11 to 10 with very negligible loss in adjusted r-squared.
+As mentioned throughout the narrative, our first model `cahoudta_full_add_model` had surprisingly good performance at the outset and became the model to beat.
 
-Having both `latitude` and `longitude` reduces the adjusted r-squared further and is not a good predictor combination.
+As visible from the results above, the backward BIC search did not help in reducing number of $\beta$ parameters. Both the full model `cahoudta_full_add_model` and backward step wise search model `cahoudta_add_bckwd_bic_model` has same number of parameters. When we tried to reduce the variables manually by removing  both `latitude` and `longitude`, we found the reductions in the adjusted $R^2$ and increase in train RMSE unacceptable. Trying more complex models like two-way interactions and polynomials did not provide significant pay off in improvements to adjusted $R^2$ or decreases in train RMSE. Finally, the variable transformation model appeared to have a very good fit of the training dataset in both the value of the adjusted $R^2$ and train RMSE.
 
-
-## Model Selection
+Our group had decided at the outset that the minimization of test RMSE, an interpretable model, and a reasonable adjusted $R^2$ were the essential tradeoffs when selecting a model. Looking at test RMSE in particular, we immediately eliminated the possibility of using the transformed variable model. The models with the lowest test RMSE had over 40 coefficients, which would make analysis challenging. Ultimately, the model we started with had the best combination of adjusted $R^2$, low enough test RMSE, and a reasonable number of coefficients. Below, we will discuss the selected model further.
 
 ## Results
 
@@ -510,7 +521,7 @@ plot(cahoudta_full_add_model,
 ```
 
 
-
+<!TODO: Avi's helper methods>
 
 
 ## Discussion
