@@ -261,7 +261,7 @@ We first initialized global variables and created helper functions (which are li
 
 ```{r}
 # build different models to test the performance
-n_models = 7
+n_models = 9
 # create a vector list of models to pass to various functions
 cahoudta_models = vector("list", length = n_models)
 cahoudta_model_names = vector("character", length = n_models)
@@ -534,7 +534,7 @@ As mentioned in above in [Limitations of the Data](#limitations-of-the-data), ou
 
 ### Interpretation of Model in Context of CA Block Groups in 1990s
 
-There are several things to notice about the below table of betas when discussing the model. The first is to note is that since we did a log transformation of the response, we will need to exponeniate the $\hat{\beta}$'s to correctly interpret the multiplicative impact of each of these parameters on `median_house_value`. For ease of interpretability, we exponeniated the coeficients then subtracted 1 (because a coefficient less than 1 should be interpreted as a percent decrease in the average `median_house_value`, whereas a coefficient greater than 1 should be interpreted as a percent increase in the average `median_house_value`). 
+There are several things to notice about the below table of $\hat{\beta}$'s when discussing the model. The first is to note is that since we did a log transformation of the response, we will need to exponeniate the $\hat{\beta}$'s to correctly interpret the multiplicative impact of each of these parameters on `median_house_value`. For ease of interpretability, we exponeniated the coeficients then subtracted 1 (because a coefficient less than 1 should be interpreted as a percent decrease in the average `median_house_value`, whereas a coefficient greater than 1 should be interpreted as a percent increase in the average `median_house_value`). 
 
 ```{r}
 coefs_exponeniated <- data.frame("Betas Exponeniated" = (exp(coef(cahoudta_full_add_model)) - 1) * 100)
