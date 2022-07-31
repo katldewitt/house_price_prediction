@@ -873,7 +873,7 @@ total number of observations in the data set, team decided to use
 70%-30% split for train-test data.</p>
 <p>We first initialized global variables and created helper functions
 (which are listed above in <a href="#helper-functions">Helper
-Functions</a> above).</p>
+Functions</a>).</p>
 <pre class="r"><code># build different models to test the performance
 n_models = 9
 # create a vector list of models to pass to various functions
@@ -894,7 +894,7 @@ ca_housing_data.te = ca_housing_data[-cahoudta_trn_idx, ]
 
 n_tr_rows = nrow(ca_housing_data.tr)
 n_te_rows = nrow(ca_housing_data.te)</code></pre>
-<p>In the process of model selection, we built a total of 8 different
+<p>In the process of model selection, we built a total of 9 different
 models. While recursively analyzing different model predictors and
 transformations, our team identified that there are few outlier
 observations which result in issues with the model training. So we

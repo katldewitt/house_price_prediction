@@ -257,7 +257,7 @@ if(length(levels(ca_housing_data$ocean_proximity)) != 4){
 After cleaning the data, we proceeded with building a model. The very first step we took was to divide data into train and test. Based on total number of observations in the data set, team decided to use 70%-30% split for train-test data.
 
 
-We first initialized global variables and created helper functions (which are listed above in [Helper Functions] above).
+We first initialized global variables and created helper functions (which are listed above in [Helper Functions]).
 
 ```{r}
 # build different models to test the performance
@@ -284,7 +284,7 @@ n_tr_rows = nrow(ca_housing_data.tr)
 n_te_rows = nrow(ca_housing_data.te)
 ```
 
-In the process of model selection, we built a total of 8 different models. While recursively analyzing different model predictors and transformations, our team identified that there are few outlier observations which result in issues with the model training. So we circled back to the very first full additive model and identified these outliers using Cook's Distance.
+In the process of model selection, we built a total of `r n_models` different models. While recursively analyzing different model predictors and transformations, our team identified that there are few outlier observations which result in issues with the model training. So we circled back to the very first full additive model and identified these outliers using Cook's Distance.
 
 ```{r}
 cahoudta_full_add_model_cd = lm(log(median_house_value) ~ ., data = ca_housing_data.tr)
