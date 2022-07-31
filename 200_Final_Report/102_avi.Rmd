@@ -66,21 +66,6 @@ get_loocv_rmse = function(model) {
   sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
 }
 
-# function to get confidence matrix for Logistic Regressopn Classification 
-make_conf_mat = function(predicted, actual) {
-  table(predicted = predicted, actual = actual)
-}
-
-# function to get sensitivity 
-get_sens = function(conf_mat) {
-  conf_mat[2, 2] / sum(conf_mat[, 2])
-}
-
-#function to get specificity
-get_spec =  function(conf_mat) {
-  conf_mat[1, 1] / sum(conf_mat[, 1])
-}
-
 # function to get observations with high leverage 
 get_leverage = function(model){
   hatvalues(model) > 2 * mean(hatvalues(model))
