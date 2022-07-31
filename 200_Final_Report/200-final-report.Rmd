@@ -499,10 +499,6 @@ names(coef_matrix) <- c("Estimate", "Standard Error", "t Value", "P Value")
 kable(coef_matrix, digits = 5, caption = "Table of Predictors and Test Statistics")
 ```
 
-
-
-
-
 We also ran all the standard diagnostics on this model.
 
 ```{r fig.height=12, fig.width=12}
@@ -519,13 +515,15 @@ plot(cahoudta_full_add_model,
 
 ## Discussion
 
+We selected the full additive model for modeling `median_house_value`. Our model provides utility in explaining the relationship between how features of a California Block Group relate to the log of the median house value of the block group. In this section, we will discuss how this model is useful and interpret the model's $\hat{\beta}$ parameters.
+
 ### Utility of Model
 
-> section should contain discussion of your results and should frame your results in the context of the data. How is your final model useful?
+As mentioned in above in [Limitations of the Data](#limitations-of-the-data), our data are from the 1990 Census, which means we are not using this model for prediction. Now that we have developed the best model with the available predictors, we can utilize the model to explain the relationship of geography to the `medain_house_value` of a block group. The below analysis is useful to understand to provide historical contextualization to the current CA real estate market. We can also use this model to ask questions about the directionality of the impact of the different predictors. In other words, our model allows us to answer questions like "do higher income block groups have higher average `median_house_values`?" 
 
 ### Interpretation of Model in Context of CA Block Groups in 1990s
 
-There are several things to notice about the below table of betas when discussing the model. The first is to note is that since we did a log transformation of the response, we will need to exponeniate the $\beta$'s to correctly interpret the multiplicative impact of each of these parameters on `median_house_value`. For ease of interpretability, we exponeniated the coeficients then subtracted 1 (because a coefficient less than 1 should be interpreted as a percent decrease in the average `median_house_value`, whereas a coefficient greater than 1 should be interpreted as a percent increase in the average `median_house_value`). 
+There are several things to notice about the below table of betas when discussing the model. The first is to note is that since we did a log transformation of the response, we will need to exponeniate the $\hat{\beta}$'s to correctly interpret the multiplicative impact of each of these parameters on `median_house_value`. For ease of interpretability, we exponeniated the coeficients then subtracted 1 (because a coefficient less than 1 should be interpreted as a percent decrease in the average `median_house_value`, whereas a coefficient greater than 1 should be interpreted as a percent increase in the average `median_house_value`). 
 
 ```{r}
 coefs_exponeniated <- data.frame("Betas Exponeniated" = (exp(coef(cahoudta_full_add_model)) - 1) * 100)
@@ -546,13 +544,17 @@ The other key $\beta$ to call attention to is that for `median_income`. For ever
 
 ### Future Directions and Lessons Learned
 
+It is also important to underscore future directions for analyses on this dataset that our group was not able to implement due to time constraints or the focus of the material of STAT420. This section is meant to emphasize the careful consideration our team took into ideating about the best way to model the data.
+
 <!TODO: Avi to add other directions we did not have time to implement>
 
 ## Appendix 
 
+Below we have included additional code used for model selection and a link to our GitHub repo.
+
 ### Additional Code Used in Model Selection
 
-<!TODO: add details in the appendix on model selection and possibly EDA>
+<!TODO: add details in the appendix on model selection>
 
 ### GitHub Repo for All Project Related Code
 
