@@ -162,15 +162,15 @@ diagnostics = function(model,
 
 
 # function to plot fitted vs. residual plot to test homoscedasticity - uniform variation in error plotted against the fitted value or response  
-plot_fitted_resid = function(model, model_name, stitle, pointcol = "dodgerblue", linecol = "darkorange" ) {
-  plot(fitted(model), resid(model), col = pointcol, pch = 20, cex = 1.5, xlab = "Fitted", ylab = "Residuals", main = "Fitted vs. Residual", sub = paste("Model: ",model_name))
-  abline(h = 0, col = linecol, lwd = 2)
+plot_fitted_resid = function(model, model_name, stitle) {
+  plot(fitted(model), resid(model), col = "dodgerblue", pch = 20, cex = 1.5, xlab = "Fitted", ylab = "Residuals", main = "Fitted vs. Residual", sub = paste("Model: ",model_name))
+  abline(h = 0, col = "darkorange", lwd = 2)
 }
 
 # function to plot qq-plot & qq-line
-plot_qq = function(model, model_name, pointcol = "dodgerblue", linecol = "darkorange") {
-  qqnorm(resid(model), col = pointcol, pch = 20, cex = 1.5, main = "Q-Q Plot", sub = paste("Model: ",model_name))
-  qqline(resid(model), col = linecol, lwd = 2)
+plot_qq = function(model, model_name) {
+  qqnorm(resid(model), col = "dodgerblue", pch = 20, cex = 1.5, main = "Q-Q Plot", sub = paste("Model: ",model_name))
+  qqline(resid(model), col = "darkorange", lwd = 2)
 }
 
 model_plot_diagnostics = function(models, model_names){
