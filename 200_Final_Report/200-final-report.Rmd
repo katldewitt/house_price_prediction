@@ -32,7 +32,7 @@ In this report we discuss the creation of a linear model to model median house v
 
 ### The Data
 
-For our project we leveraged a data set from kaggle [California Housing Prices](https://www.kaggle.com/datasets/camnugent/california-housing-prices). The data contains information from the 1990 California census and pertains to houses found in a given California district. It contains one row per census block group. A block group is the smallest geographical unit for which the U.S. Census Bureau publishes sample data (a block group typically has a population of 600 to 3,000 people).
+For our project we leveraged a data set from kaggle [California Housing Prices](https://www.kaggle.com/data sets/camnugent/california-housing-prices). The data contains information from the 1990 California census and pertains to houses found in a given California district. It contains one row per census block group. A block group is the smallest geographical unit for which the U.S. Census Bureau publishes sample data (a block group typically has a population of 600 to 3,000 people).
 
 The *California Housing Prices* data set pertains to the houses found in a given California district and some summary stats about them based on the 1990 census data. There are 10 columns and 20,640 rows in the data. The columns are as mentioned below: 
 
@@ -236,7 +236,7 @@ At this point, we have concluded the prerequisite data cleaning based on EDA and
 
 
 ```{r}
-#Final dataset and quality assurance
+#Final data set and quality assurance
 summary(ca_housing_data)
 str(ca_housing_data)
 
@@ -269,7 +269,7 @@ cahoudta_model_names = vector("character", length = n_models)
 tr_pct = 0.70
 ```
 
-In order to replicate the results, we set a seed to ensure that the test train split of our data was consistent between team members. After creating both the test and train dataset, we began building models.
+In order to replicate the results, we set a seed to ensure that the test train split of our data was consistent between team members. After creating both the test and train data set, we began building models.
 
 ```{r}
 set.seed(420072022)
@@ -293,7 +293,7 @@ cd_full_add_mod = cooks.distance(cahoudta_full_add_model_cd)
 percent_outliers = count_outliers / nrow(ca_housing_data.tr) 
 ```
 
-There were a total of `r count_outliers` observations deemed as influential based on the heuristic $D_i > \frac{4}{n}$ where $D_i$ is the distance of the $i$th observation and $n$ is the number of observations. Given that these outliers represent only `r scales::percent(percent_outliers)` of the training data, our team decided to drop these outliers from the training dataset.
+There were a total of `r count_outliers` observations deemed as influential based on the heuristic $D_i > \frac{4}{n}$ where $D_i$ is the distance of the $i$th observation and $n$ is the number of observations. Given that these outliers represent only `r scales::percent(percent_outliers)` of the training data, our team decided to drop these outliers from the training data set.
 
 When we re-fit the full additive model by ignoring these **`r count_outliers`** outliers we found that ultimately this model supplied the best Test RMSE.
 
@@ -487,7 +487,7 @@ model_performance_metrics(cahoudta_models,
 
 As mentioned throughout the narrative, our first model `cahoudta_full_add_model` had surprisingly good performance at the outset and became the model to beat.
 
-As visible from the results above, the backward BIC search did not help in reducing number of $\beta$ parameters. Both the full model `cahoudta_full_add_model` and backward step wise search model `cahoudta_add_bckwd_bic_model` has same number of parameters. When we tried to reduce the variables manually by removing  both `latitude` and `longitude`, we found the reductions in the adjusted $R^2$ and increase in train RMSE unacceptable. Trying more complex models like two-way interactions and polynomials did not provide significant pay off in improvements to adjusted $R^2$ or decreases in train RMSE. Finally, the variable transformation model appeared to have a very good fit of the training dataset in both the value of the adjusted $R^2$ and train RMSE.
+As visible from the results above, the backward BIC search did not help in reducing number of $\beta$ parameters. Both the full model `cahoudta_full_add_model` and backward step wise search model `cahoudta_add_bckwd_bic_model` has same number of parameters. When we tried to reduce the variables manually by removing  both `latitude` and `longitude`, we found the reductions in the adjusted $R^2$ and increase in train RMSE unacceptable. Trying more complex models like two-way interactions and polynomials did not provide significant pay off in improvements to adjusted $R^2$ or decreases in train RMSE. Finally, the variable transformation model appeared to have a very good fit of the training data set in both the value of the adjusted $R^2$ and train RMSE.
 
 Our group had decided at the outset that the minimization of test RMSE, an interpretable model, and a reasonable adjusted $R^2$ were the essential tradeoffs when selecting a model. Looking at test RMSE in particular, we immediately eliminated the possibility of using the transformed variable model. The models with the lowest test RMSE had over 40 coefficients, which would make analysis challenging. Ultimately, the model we started with had the best combination of adjusted $R^2$, low enough test RMSE, and a reasonable number of coefficients. Below, we will discuss the selected model further.
 
@@ -555,7 +555,7 @@ The other key $\hat{\beta}$ to call attention to is that for `median_income`. Fo
 
 ### Future Directions and Lessons Learned
 
-It is also important to underscore future directions for analyses on this dataset that our group was not able to implement due to time constraints or the focus of the material of STAT420. This section is meant to emphasize the careful consideration our team took into ideating about the best way to model the data.
+It is also important to underscore future directions for analyses on this data set that our group was not able to implement due to time constraints or the focus of the material of STAT420. This section is meant to emphasize the careful consideration our team took into ideating about the best way to model the data.
 
 <!TODO: Avi to add other directions we did not have time to implement>
 
