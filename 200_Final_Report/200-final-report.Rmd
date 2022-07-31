@@ -551,7 +551,7 @@ Please note that our base level for `ocean_proximity` is "<1H OCEAN". The implic
 
 The other two geographical variables, latitude and longitude, also have interesting interpretations based on our priors expecting geography to play a major role in price in 1990 CA block group house value. Specifically, for every 1 unit increase in latitude (moving Westward), we see a `r abs(coefs_exponeniated["latitude",])`% decrease in `median_house_value`. Similarly,  for every 1 unit increase in longitude (moving North), we see a `r abs(coefs_exponeniated["longitude",])`% decrease in `median_house_value`.
 
-The other key $\beta$ to call attention to is that for `median_income`. For every 1 unit increase in median income, we see `r abs(coefs_exponeniated["median_income",])`% increase in the `median_house_value`. In other words, the model found that blocks with higher incomes would have higher values of `median_house_value`. 
+The other key $\hat{\beta}$ to call attention to is that for `median_income`. For every 1 unit increase in median income, we see `r abs(coefs_exponeniated["median_income",])`% increase in the `median_house_value`. In other words, the model found that blocks with higher incomes would have higher values of `median_house_value`. 
 
 ### Future Directions and Lessons Learned
 
