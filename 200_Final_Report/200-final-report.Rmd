@@ -370,7 +370,7 @@ less_preds = paste0("log(median_house_value) ~ ",
 cahoudta_lowvif_add_mod = lm(formula = less_preds, data = ca_housing_data.tr)
 ```
 
-Due to the drop in the Adjusted $R^2$, we tried a model that added two-way interactions for the low VIF variables. Unfortunately, this did not substantially improve the R^2 or train RMSE.
+Due to the drop in the Adjusted $R^2$, we tried a model that added two-way interactions for the low VIF variables. Unfortunately, this did not substantially improve the $R^2$ or train RMSE.
 
 ```{r}
 less_preds_2int = paste0("log(median_house_value) ~ (", 
@@ -378,7 +378,7 @@ less_preds_2int = paste0("log(median_house_value) ~ (",
 cahoudta_lowvif_2int_mod = lm(formula = less_preds_2int, data = ca_housing_data.tr)
 ```
 
-We held out hope for the low VIF predictors as a source of a good model. In fact, we tried to leverage a 2nd degree polynomial to see if the model would improve. Note that in creation of this model we had to exclude the categorical predictor `ocean_proximity` from polynomial formula. Sadly, the Adjusted R^2 improved by less than 0.01 for this addition in model complexity.
+We held out hope for the low VIF predictors as a source of a good model. In fact, we tried to leverage a 2nd degree polynomial to see if the model would improve. Note that in creation of this model we had to exclude the categorical predictor `ocean_proximity` from polynomial formula. Sadly, the Adjusted $R^2$ improved by less than 0.01 for this addition in model complexity.
 
 ```{r}
 drop_cols = which(colnames(ca_housing_data.tr) == "median_house_value" | 
