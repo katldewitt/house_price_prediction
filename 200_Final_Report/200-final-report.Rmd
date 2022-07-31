@@ -556,6 +556,9 @@ The other key $\beta$ to call attention to is that for `median_income`. For ever
 
 ### GitHub Repo for All Project Related Code
 
+In preparation for this project, each of our team members conducted EDA in our own .rmd files. Additionally, team members engaged in model building worked through many iterations that included variable creation, iterating with `step()`, and verifying the model assumptions. For the sake of brevity, we have not included all code used to select our model. However, we would like to leave a link to our GitHub repo where we all files and code developed in service of the project can be found.
+
+**The link to our GitHub repo is [https://github.com/katldewitt/house_price_prediction](https://github.com/katldewitt/house_price_prediction).**
 
 ### Authors
 
