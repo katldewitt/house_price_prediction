@@ -1,6 +1,6 @@
 ---
 title: "Stat 420 Final Project Work"
-author: "STAT 420, Summer 2022, D. Unger"
+author: "Avinash Tiwari - tiwari6"
 date: ''
 output:
   pdf_document: default
@@ -11,44 +11,186 @@ urlcolor: cyan
 ---
 
 # Analysis Workbook
-
-
 ```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
 options(scipen = 1, digits = 4, width = 80, fig.alin = "center")
 
 library(ggplot2)
+library(faraway)
 ```
 
 ## Proposal
-7/10
-
-Everyone make own file for work. 
-
 ## Define Helper Functions
 
+```{r}
+
+## 1. FUNCTIONS TO CHECK / OPTIMIZE MODEL PERFORMANCE ##
+
+# function to get RMSE 
+get_RMSE = function(fitted_y, actual_y){
+  n = length(fitted_y)                                      #length of data 
+  rmse = sqrt((sum(((actual_y - fitted_y) ^ 2)) / n))
+}
+
+# function to get R-Square  
+get_R_SQ = function(fitted_y, actual_y) {
+  n = length(fitted_y)
+  SST = sum((actual_y - mean(actual_y)) ^ 2)                #Sum of Square Total 
+  SSReg = sum((fitted_y - mean(actual_y)) ^ 2)              #Sum of Square Regression 
+  SSReg / SST                                               # Proportion of variance in the data explained by regression 
+}
+
+# function to get adjusted R-Square 
+get_adj_r2 = function(model) {
+  summary(model)$adj.r.squared
+}
+
+# function to get estimated SD for MLE = TRUE or MLE = FALSE 
+get_sd_est = function(fitted_vals, actual_vals, mle = FALSE) {
+  e     = actual_vals - fitted_vals
+  n     = length(e)
+  if (mle) {
+    s2_e = (sum(e ^ 2)) / n
+  } else {
+    s2_e  = (sum(e ^ 2)) / (n - 2)
+  }
+  sqrt(s2_e)
+}
+
+# function to get number of parameters in a model 
+get_num_params = function(model) {
+  length(coef(model))
+}
+
+# function to get 'Leave-one-out-cross-validated-RMSE'
+get_loocv_rmse = function(model) {
+  sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
+}
+
+# function to get observations with high leverage 
+get_leverage = function(model){
+  hatvalues(model) > 2 * mean(hatvalues(model))
+}
+
+# function to get outlier observations based on cooks-distance
+get_outliers = function(model){
+  cooks.distance(model) > 4 / length(cooks.distance(model))  
+}
+
+# function to get scatterplot of all variable pairs in a dataset (for only numerical variables)
+get_pairs = function(num_data){
+  pairs(num_data, col = "dodgerblue")
+
+}
+
+# function to get vif of a model 
+get_vif = function(model){
+  vif(model)
+}
+
+# function to get pair-wise correlations for dataframe with numerical columns only 
+get_cor = function(num_data){
+  cor(num_data)
+}
+
+# ========================================================================================================================================= #
+
+## 2. FUNCTIONS FOR CHECKING LINEAR REGRESSION MODEL ASSUMPTIONS (LINE) ##
+
+# dont use this one - use the one in helper function 
+# function to plot fitted vs. residula plot to test homoscedasticity - uniform variation in error plotted against the fitted value or response  
+#plot_fitted_resid = function(model, pointcol = "dodgerblue", linecol = "darkorange") {
+#  plot(fitted(model), resid(model), col = pointcol, pch = 20, cex = 1.5, xlab = "Fitted", ylab = "Residuals")
+#  abline(h = 0, col = linecol, lwd = 2)
+#}
+
+# function to get decision of Breusch-Pagan Test (for checking homoscedasticity)
+get_bp_decision = function(model, alpha) {
+  decide = unname(bptest(model)$p.value < alpha)
+  ifelse(decide, "Reject", "Fail to Reject")
+}
+
+# dont use this one - use the one in helper function 
+# function to plot qq-plot & qq-line
+#plot_qq = function(model, pointcol = "dodgerblue", linecol = "darkorange") {
+#  qqnorm(resid(model), col = pointcol, pch = 20, cex = 1.5)
+#  qqline(resid(model), col = linecol, lwd = 2)
+#}
+
+# function to get decision of Shapiro-Wilk Test (for normality of error term)  
+get_sw_decision = function(model, alpha) {
+  decide = unname(shapiro.test(resid(model))$p.value < alpha)
+  ifelse(decide, "Reject", "Fail to Reject")
+}
+
+# Linear Regression Diagnostic function to check 'homoscedasticity of residuals' and 'normalty of residuals w. response'
+diagnostics = function(model,
+                      pcol = "grey",
+                      lcol = "dodgerblue",
+                      alpha = 0.05,
+                      plotit = "TRUE",
+                      testit = "TRUE"){
+  
+  if(plotit){
+    par(mfrow = c(1, 2))
+    plot(fitted(model), resid(model), col = pcol, pch = 20, xlab = "Fitted", ylab = "Residuals", main = "Residuals vs. Fitted")
+    abline(h = 0, col = lcol, lwd = 2)
+    
+    qqnorm(resid(model), main = "Normal Q-Q Plot", col = pcol)
+    qqline(resid(model), col = lcol, lwd = 2)
+  }
+  
+  if(testit){
+    p_val = shapiro.test(resid(model))$p.value
+    decision = ifelse(shapiro.test(resid(model))$p.value <= alpha, "Reject", "Fail to Reject")
+    list(p_val = p_val, decision = decision)
+  }
+}
+
+```
+
+**Function   : **`model_plots` will generate model plots such as Q-Q plot or fitted vs. residuals plot
+
+**Inputs: **
+
+*models      : * A list of models to generate the plots
+
+**Returns    : ** None
+
+```{r}
+# ========================================================================================================================================= #
+## 3. HELPER FUNCTION ##
+
+
+# function to plot fitted vs. residual plot to test homoscedasticity - uniform variation in error plotted against the fitted value or response  
+plot_fitted_resid = function(model, model_name, stitle) {
+  plot(fitted(model), resid(model), col = "dodgerblue", pch = 20, cex = 1.5, xlab = "Fitted", ylab = "Residuals", main = "Fitted vs. Residual", sub = paste("Model: ",model_name))
+  abline(h = 0, col = "darkorange", lwd = 2)
+}
+
+# function to plot qq-plot & qq-line
+plot_qq = function(model, model_name) {
+  qqnorm(resid(model), col = "dodgerblue", pch = 20, cex = 1.5, main = "Q-Q Plot", sub = paste("Model: ",model_name))
+  qqline(resid(model), col = "darkorange", lwd = 2)
+}
+
+model_plot_diagnostics = function(models, model_names){
+  n_mod = length(models)
+  
+  for (i in 1:n_mod){
+    par(mfrow=c(1,2))
+    plot_fitted_resid(models[[i]], model_names[[i]])
+    plot_qq(models[[i]], model_names[[i]])
+  }
+}
+```
+
+
+
 ## EDA
--shared by 7/13
-
 ## Data cleaning
--agreed/coordinate
--shared by 7/13
-
 ## Variable Creation
--shared 7/24
-
 ## Model Building
--shared 7/24
-
 ## Model Selection
-- share 7/24
--coordinate 7/24
-
 ## Graphs and Tables  
-- coordinate 7/13
--coordinate 7/24 
-
 ## QA: How do we know what we did makes sense?.
-
 ## Move to final report
-August 2nd (remember to knit often!!)
-Report Due August 5th
