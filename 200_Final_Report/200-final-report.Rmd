@@ -119,6 +119,7 @@ model_performance_metrics = function(models, model_names, data){
 }
 ```
 
+<!TODO Please add only relevant helper functions that will be used for results. Including the driver function. >
 
 ### Data Cleaning
 
@@ -409,7 +410,7 @@ message("Model 8: Formula: ", less_preds)
 cahoudta_lola_add_mod = lm(formula = less_preds, data = ca_housing_data.tr)
 ```
 
-Our final step was to attempt variable transformations to attempt to better capture the variance in the response variable. We transformed predictors `population` and `total_rooms` to be normalized with predictor `households`. <!TODO: Avi, can you add about your reasoning here?>
+Our final step was to attempt variable transformations to attempt to better capture the variance in the response variable. We transformed predictors `population` and `total_rooms` to be normalized with predictor `households`. <!TODO: Avi, can you add about your reasoning here why we need additional variables transformed. The results are showing that this model is over-fitting?>
 
 ```{r}
 ca_housing_data.tr$pop_per_hh = (ca_housing_data.tr$population / 
@@ -488,7 +489,7 @@ model_performance_metrics(cahoudta_models,
 final_selected_model <- cahoudta_add_bckwd_bic_model
 ```
 
-As mentioned throughout the narrative, our first model `cahoudta_full_add_model` had surprisingly good performance at the outset and became the model to beat. However, as visible from the results above, the backward BIC search did help in reducing number of $\beta$ parameters by 1. Both the full model `cahoudta_full_add_model` and backward step wise search model `cahoudta_add_bckwd_bic_model` had similar train RMSE, test RMSE, and adjusted $R^2$. Since the model `cahoudta_add_bckwd_bic_model` is smaller,  it was a strong contender for selection after creating only two models, but we also wanted to remove collinear variables, explore variable transformations, and leverage interaction terms.
+As mentioned throughout the narrative, our first model `cahoudta_full_add_model` had surprisingly good performance at the outset and became the model to beat. However, as visible from the results above, the backward BIC search did help in reducing number of $\beta$ parameters by 1. Both the full model `cahoudta_full_add_model` and backward step wise search model `'cahoudta_add_bckwd_bic_model` had similar train RMSE, test RMSE, and adjusted $R^2$. Since the model `cahoudta_add_bckwd_bic_model` is smaller,  it was a strong contender for selection after creating only two models, but we also wanted to remove collinear variables, explore variable transformations, and leverage interaction terms.
 
 When we tried to reduce the variables manually by removing  both `latitude` and `longitude`, we found the reductions in the adjusted $R^2$ and increase in train RMSE unacceptable. Trying more complex models like two-way interactions and polynomials did not provide significant pay off in improvements to adjusted $R^2$ or decreases in train RMSE. Finally, the variable transformation model appeared to have a very good fit of the training data set in both the value of the adjusted $R^2$ and train RMSE.
 
@@ -524,7 +525,16 @@ plot(final_selected_model,
 ```
 
 
-<!TODO: Avi's helper methods>
+<!TODO: Avi's helper methods related to results should go under "METHODS" Section. Call the driver function here.>
+<!TODO: Compare the two models 'cahoudta_full_add_model' and 'cahoudta_add_bckwd_bic_model'>
+<!TODO: Residuals vs Fitted Plot side by side for two models>
+<!TODO: bptest() for all models - tabular format for two models>
+<!TODO: Q-Q plot for each model side by side for two models>
+<!TODO: Shapiro Wilk test for all models - tabular format - for the two models>
+<!TODO: [Wishlist] Use pairs plot from "Models Selection" section as reference to build a magnified version
+        for each variable vs response under results section. Have a driver function which plots 6 scatterplots
+        and a box plot for ocean_proximity. Use log of response.>
+
 
 
 ## Discussion
@@ -560,15 +570,14 @@ The other key $\hat{\beta}$ to call attention to is that for `median_income`. Fo
 
 It is also important to underscore future directions for analyses on this data set that our group was not able to implement due to time constraints or the focus of the material of STAT420. This section is meant to emphasize the careful consideration our team took into ideating about the best way to model the data.
 
-<!TODO: Avi to add other directions we did not have time to implement>
+<!TODO: Avi to add details around thought process of using variable transformations such as converting lat/lon to
+        regions/counties. And explain why we couldn't do that in our project because of time constraints. 
+        If deemed necessary also add details around "euclidean" distance idea and reasoning behind exploring that
+        option.>
 
 ## Appendix 
 
 Below we have included additional code used for model selection and a link to our GitHub repo.
-
-### Additional Code Used in Model Selection
-
-<!TODO: add details in the appendix on model selection>
 
 ### GitHub Repo for All Project Related Code
 
