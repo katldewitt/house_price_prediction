@@ -32,7 +32,7 @@ In this report we discuss the creation of a linear model to model median house v
 
 ### The Data
 
-For our project we leveraged a data set from kaggle [California Housing Prices](https://www.kaggle.com/data sets/camnugent/california-housing-prices). The data contains information from the 1990 California census and pertains to houses found in a given California district. It contains one row per census block group. A block group is the smallest geographical unit for which the U.S. Census Bureau publishes sample data (a block group typically has a population of 600 to 3,000 people).
+For our project we leveraged a data set from kaggle [California Housing Prices](https://www.kaggle.com/datasets/camnugent/california-housing-prices). The data contains information from the 1990 California census and pertains to houses found in a given California district. It contains one row per census block group. A block group is the smallest geographical unit for which the U.S. Census Bureau publishes sample data (a block group typically has a population of 600 to 3,000 people).
 
 The *California Housing Prices* data set pertains to the houses found in a given California district and some summary stats about them based on the 1990 census data. There are 10 columns and 20,640 rows in the data. The columns are as mentioned below: 
 
