@@ -32,7 +32,7 @@ In this report we discuss the creation of a linear model to model median house v
 
 ### The Data
 
-For our project we leveraged a data set from kaggle [California Housing Prices](https://www.kaggle.com/data sets/camnugent/california-housing-prices). The data contains information from the 1990 California census and pertains to houses found in a given California district. It contains one row per census block group. A block group is the smallest geographical unit for which the U.S. Census Bureau publishes sample data (a block group typically has a population of 600 to 3,000 people).
+For our project we leveraged a data set from kaggle [California Housing Prices](https://www.kaggle.com/datasets/camnugent/california-housing-prices). The data contains information from the 1990 California census and pertains to houses found in a given California district. It contains one row per census block group. A block group is the smallest geographical unit for which the U.S. Census Bureau publishes sample data (a block group typically has a population of 600 to 3,000 people).
 
 The *California Housing Prices* data set pertains to the houses found in a given California district and some summary stats about them based on the 1990 census data. There are 10 columns and 20,640 rows in the data. The columns are as mentioned below: 
 
@@ -119,6 +119,7 @@ model_performance_metrics = function(models, model_names, data){
 }
 ```
 
+<!TODO Please add only relevant helper functions that will be used for results. Including the driver function. >
 
 ### Data Cleaning
 
@@ -147,7 +148,7 @@ colSums(is.na(ca_housing_data))
 
 As part of data cleaning, we plotted the `median_house_value` against latitude and longitude to visualize the locations of the different houses. One of the first things we noticed were two distinct clusters of highly priced houses that appear to correspond to Los Angeles and the San Francisco Bay Area in bright red. The lighter green dots in the plot illustrate the lowest priced houses. Note that this scale differentiates by color using the median `median_house_value` as a midpoint, which helps to illustrate concentrated areas of high price values.
 
-```{r}
+```{r fig.height=8, fig.width=12}
 ## Map the data
 #Source: https://stackoverflow.com/questions/65233613/plot-a-map-using-lat-and-long-with-r
 my_sf <- st_as_sf(ca_housing_data, coords = c('longitude', 'latitude'))
@@ -205,7 +206,7 @@ ca_housing_data <- subset(ca_housing_data, select=-c(total_bedrooms))
 We have another column `ocean_proximity` which is a categorical variable indicating how close the block is from ocean. Using latitude and longitude, we can see how this factor variable helps to classify different census blocks. Keeping in mind that we saw distinct clusters of highly priced median house value in the Bay Area (see the blue "NEAR BAY" region) and LA (around 34N, 118W "NEAR OCEAN" region), this factor along with latitude and longitude will help us to capture the geographic nature of housing value.
 
 
-```{r}
+```{r fig.height=8, fig.width=12}
 ggplot(my_sf) + 
   geom_sf(aes(color = ocean_proximity)) +
               labs( y = "Longitude", 
@@ -409,7 +410,7 @@ message("Model 8: Formula: ", less_preds)
 cahoudta_lola_add_mod = lm(formula = less_preds, data = ca_housing_data.tr)
 ```
 
-Our final step was to attempt variable transformations to attempt to better capture the variance in the response variable. We transformed predictors `population` and `total_rooms` to be normalized with predictor `households`. <!TODO: Avi, can you add about your reasoning here?>
+Our final step was to attempt variable transformations to attempt to better capture the variance in the response variable. We transformed predictors `population` and `total_rooms` to be normalized with predictor `households`. <!TODO: Avi, can you add about your reasoning here why we need additional variables transformed. The results are showing that this model is over-fitting?>
 
 ```{r}
 ca_housing_data.tr$pop_per_hh = (ca_housing_data.tr$population / 
@@ -488,7 +489,7 @@ model_performance_metrics(cahoudta_models,
 final_selected_model <- cahoudta_add_bckwd_bic_model
 ```
 
-As mentioned throughout the narrative, our first model `cahoudta_full_add_model` had surprisingly good performance at the outset and became the model to beat. However, as visible from the results above, the backward BIC search did help in reducing number of $\beta$ parameters by 1. Both the full model `cahoudta_full_add_model` and backward step wise search model `cahoudta_add_bckwd_bic_model` had similar train RMSE, test RMSE, and adjusted $R^2$. Since the model `cahoudta_add_bckwd_bic_model` is smaller,  it was a strong contender for selection after creating only two models, but we also wanted to remove collinear variables, explore variable transformations, and leverage interaction terms.
+As mentioned throughout the narrative, our first model `cahoudta_full_add_model` had surprisingly good performance at the outset and became the model to beat. However, as visible from the results above, the backward BIC search did help in reducing number of $\beta$ parameters by 1. Both the full model `cahoudta_full_add_model` and backward step wise search model `'cahoudta_add_bckwd_bic_model` had similar train RMSE, test RMSE, and adjusted $R^2$. Since the model `cahoudta_add_bckwd_bic_model` is smaller,  it was a strong contender for selection after creating only two models, but we also wanted to remove collinear variables, explore variable transformations, and leverage interaction terms.
 
 When we tried to reduce the variables manually by removing  both `latitude` and `longitude`, we found the reductions in the adjusted $R^2$ and increase in train RMSE unacceptable. Trying more complex models like two-way interactions and polynomials did not provide significant pay off in improvements to adjusted $R^2$ or decreases in train RMSE. Finally, the variable transformation model appeared to have a very good fit of the training data set in both the value of the adjusted $R^2$ and train RMSE.
 
@@ -524,7 +525,16 @@ plot(final_selected_model,
 ```
 
 
-<!TODO: Avi's helper methods>
+<!TODO: Avi's helper methods related to results should go under "METHODS" Section. Call the driver function here.>
+<!TODO: Compare the two models 'cahoudta_full_add_model' and 'cahoudta_add_bckwd_bic_model'>
+<!TODO: Residuals vs Fitted Plot side by side for two models>
+<!TODO: bptest() for all models - tabular format for two models>
+<!TODO: Q-Q plot for each model side by side for two models>
+<!TODO: Shapiro Wilk test for all models - tabular format - for the two models>
+<!TODO: [Wishlist] Use pairs plot from "Models Selection" section as reference to build a magnified version
+        for each variable vs response under results section. Have a driver function which plots 6 scatterplots
+        and a box plot for ocean_proximity. Use log of response.>
+
 
 
 ## Discussion
@@ -546,7 +556,7 @@ kable(coefs_exponeniated)
 
 Next, we discuss the role geography played in `median_house_value`. For the purpose of discussions, we included once again the graph of `median_house_value` based on latitude and longitude to allow the reader to review the model's findings against the geographical spread of the response variable.
 
-```{r}
+```{r fig.height=8, fig.width=12}
 hs_value_plot
 ```
 
@@ -560,15 +570,14 @@ The other key $\hat{\beta}$ to call attention to is that for `median_income`. Fo
 
 It is also important to underscore future directions for analyses on this data set that our group was not able to implement due to time constraints or the focus of the material of STAT420. This section is meant to emphasize the careful consideration our team took into ideating about the best way to model the data.
 
-<!TODO: Avi to add other directions we did not have time to implement>
+<!TODO: Avi to add details around thought process of using variable transformations such as converting lat/lon to
+        regions/counties. And explain why we couldn't do that in our project because of time constraints. 
+        If deemed necessary also add details around "euclidean" distance idea and reasoning behind exploring that
+        option.>
 
 ## Appendix 
 
 Below we have included additional code used for model selection and a link to our GitHub repo.
-
-### Additional Code Used in Model Selection
-
-<!TODO: add details in the appendix on model selection>
 
 ### GitHub Repo for All Project Related Code
 
