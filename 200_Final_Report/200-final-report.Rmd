@@ -148,7 +148,7 @@ colSums(is.na(ca_housing_data))
 
 As part of data cleaning, we plotted the `median_house_value` against latitude and longitude to visualize the locations of the different houses. One of the first things we noticed were two distinct clusters of highly priced houses that appear to correspond to Los Angeles and the San Francisco Bay Area in bright red. The lighter green dots in the plot illustrate the lowest priced houses. Note that this scale differentiates by color using the median `median_house_value` as a midpoint, which helps to illustrate concentrated areas of high price values.
 
-```{r}
+```{r fig.height=8, fig.width=12}
 ## Map the data
 #Source: https://stackoverflow.com/questions/65233613/plot-a-map-using-lat-and-long-with-r
 my_sf <- st_as_sf(ca_housing_data, coords = c('longitude', 'latitude'))
@@ -206,7 +206,7 @@ ca_housing_data <- subset(ca_housing_data, select=-c(total_bedrooms))
 We have another column `ocean_proximity` which is a categorical variable indicating how close the block is from ocean. Using latitude and longitude, we can see how this factor variable helps to classify different census blocks. Keeping in mind that we saw distinct clusters of highly priced median house value in the Bay Area (see the blue "NEAR BAY" region) and LA (around 34N, 118W "NEAR OCEAN" region), this factor along with latitude and longitude will help us to capture the geographic nature of housing value.
 
 
-```{r}
+```{r fig.height=8, fig.width=12}
 ggplot(my_sf) + 
   geom_sf(aes(color = ocean_proximity)) +
               labs( y = "Longitude", 
@@ -556,7 +556,7 @@ kable(coefs_exponeniated)
 
 Next, we discuss the role geography played in `median_house_value`. For the purpose of discussions, we included once again the graph of `median_house_value` based on latitude and longitude to allow the reader to review the model's findings against the geographical spread of the response variable.
 
-```{r}
+```{r fig.height=8, fig.width=12}
 hs_value_plot
 ```
 
