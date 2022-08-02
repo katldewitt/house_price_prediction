@@ -20,6 +20,8 @@ library(faraway)
 library(knitr)
 library(broom)
 library(sf)
+library(lmtest)
+
 
 green_color <- "#009E73"
 ```
@@ -119,7 +121,97 @@ model_performance_metrics = function(models, model_names, data){
 }
 ```
 
-<!TODO Please add only relevant helper functions that will be used for results. Including the driver function. >
+
+**Function   : **`get_model_diagnostic_tests` will generate model diagnostic tests such as B-P Test and Shapiro-Wilk test to check homoscedasticity and normality of residuals
+
+**Inputs: **
+
+*models      : * A list of models and model names to generate the results table
+
+**Returns    : ** None
+
+```{r}
+
+get_model_diagnostic_tests = function(models, model_names){
+  
+  n_mod = length(models)
+  
+  diagnostics_metrics_df = data.frame(
+    row.names = model_names,
+    "BP_P_Value" = rep(0.0, n_mod),
+    "BP_DEC" = rep("", n_mod),
+    "SW_P_VALUE"  = rep(0.0, n_mod),
+    "SW_DEC" = rep("", n_mod)
+  )
+  
+  for (idx in 1:n_mod){
+    diagnostics_metrics_df[model_names[idx], "BP_P_Value"] = bptest(models[[idx]])$p.value
+    diagnostics_metrics_df[model_names[idx], "BP_DEC"] = get_bp_decision(models[[idx]])
+    diagnostics_metrics_df[model_names[idx], "SW_P_VALUE"] = shapiro.test(sample(resid(models[[idx]]), 5000))$p.value
+    diagnostics_metrics_df[model_names[idx], "SW_DEC"] = get_sw_decision(models[[idx]])
+  }
+  
+  # Diagnostics of Models
+  kable(diagnostics_metrics_df,
+        col.names = c("B-P Test P-Value",
+                      "B-P Test Decision",
+                      "Shapiro-Wilk Test P-Value",
+                      "Shapiro-Wilk Test Decision"),
+        caption = "Comparative Model Diagnostics")
+}
+
+# function to get decision of Breusch-Pagan Test (for checking homoscedasticity)
+get_bp_decision = function(model, alpha=0.05) {
+  decide = unname(bptest(model)$p.value < alpha)
+  ifelse(decide, "Reject", "Fail to Reject")
+}
+
+# function to get decision of Shapiro-Wilk Test (for normality of error term)  
+get_sw_decision = function(model, alpha=0.05) {
+  decide = unname(shapiro.test(sample(resid(model), 5000))$p.value < alpha)
+  ifelse(decide, "Reject", "Fail to Reject")
+}
+
+```
+
+**Function   : **`get_model_diagnostic_plots` will generate model diagnostic plots such as Q-Q plot or fitted vs. residuals plot
+
+**Inputs: **
+
+*models      : * A list of models to generate the plots
+
+**Returns    : ** None
+
+
+```{r}
+get_model_diagnostic_plots = function(models, model_names){
+  
+  n_mod = length(models)
+  
+  par(mfrow=c(1,2))
+  for (i in 1:n_mod){
+    plot_fitted_resid(models[[i]], model_names[[i]])
+  }
+
+  par(mfrow=c(1,2))
+  for (i in 1:n_mod){
+    plot_qq(models[[i]], model_names[[i]])
+  }
+}
+
+# function to plot fitted vs. residual plot to test homoscedasticity - uniform variation in error plotted against the fitted value or response  
+plot_fitted_resid = function(model, model_name, stitle) {
+  plot(fitted(model), resid(model), col = green_color, pch = 20, xlab = "Fitted", ylab = "Residuals", main = paste0("Fitted vs. Residual for ", model_name), sub = model_name)
+  abline(h = 0, col = "darkorange", lwd = 2)
+}
+
+# function to plot qq-plot & qq-line
+plot_qq = function(model, model_name) {
+  qqnorm(resid(model), col = green_color, pch = 20,  main = paste0("Q-Q Plot for ", model_name), sub = model_name)
+  qqline(resid(model), col = "darkorange", lwd = 2)
+}
+
+```
 
 ### Data Cleaning
 
@@ -410,7 +502,11 @@ message("Model 8: Formula: ", less_preds)
 cahoudta_lola_add_mod = lm(formula = less_preds, data = ca_housing_data.tr)
 ```
 
-Our final step was to attempt variable transformations to attempt to better capture the variance in the response variable. We transformed predictors `population` and `total_rooms` to be normalized with predictor `households`. <!TODO: Avi, can you add about your reasoning here why we need additional variables transformed. The results are showing that this model is over-fitting?>
+Our final step was to attempt variable transformations to attempt to better capture the variance in the response variable. We transformed predictors `population` and `total_rooms` to be normalized with predictor `households`. We think derived variables 'rooms_per_hh' and 'pop_per_hh' should add predictive power to the model because of the following reasons. 
+- 'rooms_per_hh': houses with higher number of rooms per household is likely going to be larger having a positive correlation with housing prices 
+- 'pop_per_hh': block with bigger houses will attract larger families (population_per_household)
+
+<!TODO: Avi, can you add about your reasoning here why we need additional variables transformed. The results are showing that this model is over-fitting?>
 
 ```{r}
 ca_housing_data.tr$pop_per_hh = (ca_housing_data.tr$population / 
@@ -524,6 +620,35 @@ plot(final_selected_model,
      col = green_color)
 ```
 
+We also ran model diagnostic tests to check linear regression assumptions with the help of Breusch-Pagan Test and Shapiro-Wilk Test. 
+- Breusch-Pagan Test decision for all the models was to 'Reject the null hypothesis' meaning there is some heteroscedasticity in the models 
+- Shapiro-Wilk test shows that we could "Reject the null hypothesis' for al the models. i.e., model error is not following a normal distribution. 
+
+```{r}
+get_model_diagnostic_tests(cahoudta_models, cahoudta_model_names)
+```
+
+We are showing the model diagnostic plots for our top 2 models 1) cahoudta_full_add_model and 2) cahoudta_add_bckwd_bic_model. As it can be see, with log transformation of response we could reduce the issue of heteroscedasticity and error not following normal distribution. However, this is not entirely gone as it can be seen from the plots below. 
+
+```{r fig.height=8, fig.width=12}
+
+# No of models for comparative charts 
+n_top_models = 2
+
+# create a vector list of models to pass to various functions
+top_cahoudta_models = vector("list", length = n_top_models)
+top_cahoudta_model_names = vector("character", length = n_top_models)
+
+top_cahoudta_models [[1]] = cahoudta_full_add_model
+top_cahoudta_model_names[[1]] = "cahoudta_full_add_model"
+
+top_cahoudta_models[[2]] = cahoudta_add_bckwd_bic_model
+top_cahoudta_model_names[[2]] = "cahoudta_add_bckwd_bic_model"
+
+
+get_model_diagnostic_plots(top_cahoudta_models, top_cahoudta_model_names)
+```
+
 
 <!TODO: Avi's helper methods related to results should go under "METHODS" Section. Call the driver function here.>
 <!TODO: Compare the two models 'cahoudta_full_add_model' and 'cahoudta_add_bckwd_bic_model'>
@@ -569,6 +694,18 @@ The other key $\hat{\beta}$ to call attention to is that for `median_income`. Fo
 ### Future Directions and Lessons Learned
 
 It is also important to underscore future directions for analyses on this data set that our group was not able to implement due to time constraints or the focus of the material of STAT420. This section is meant to emphasize the careful consideration our team took into ideating about the best way to model the data.
+
+- Extracting meaningful Geo-Spatial insights / predictor variables based on 'Latitude' & 'Longitude' data: Houses within 50 miles radius of largest cities in California would likely have higher prices compared to houses which are outside 50 miles radius. Our team ideated extracting variables using Geo-Spatial libraries and methods such as  'Haversine Distance' - formula to calculate distance between 2 points on a sphere based on lat / long.  Another alternative was to simply use Euclidian Distance  based on lat and long information of houses and large cities to tag houses within 50 miles radius. In the interest of time we could not create these variables but we certainly would like to try including these Geo-Spatial variables in our model. 
+
+- Looking at the response variable histogram, it seems that the median house prices are capped at the top. We would like to further explore the impacts of this in response variable. or maybe limit the model usage for houses with very high value 
+
+- Our 9th model - cahoudta_2int_txfd_model - has the highest adjusted r-square although it suffers from over-fitting issue. We would like to investigate this further with the objective of mitigating over-fitting withough sacrificing adjusted r-square performance. 
+
+- In our dataset 'total_bed_rooms' column had missing values. Given this column was highly correlated with 'total_bedrooms' and number of missing value being low - we safely deleted 'total_bedrooms' variable from the modeling exercise. In future, we would like to treat 'total_bedrooms' with missing value imputation to find out whether it has stronger signal than 'total_rooms' variable 
+
+- We see some from BP Test result and 'Fitted vs. Residual' plot that the residuals still have some heteroscedasticity. In future, we would like to further reduce the issue by trying tranformation of predictor varibales 
+
+- Our Q-Q plot for top 2 models does mostly look good, however towards the lower edge we see some diversion from the line. Time permitting, we would investigate more going forward to resolve the normality of error term issue 
 
 <!TODO: Avi to add details around thought process of using variable transformations such as converting lat/lon to
         regions/counties. And explain why we couldn't do that in our project because of time constraints. 
