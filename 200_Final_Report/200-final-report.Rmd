@@ -122,7 +122,8 @@ model_performance_metrics = function(models, model_names, data){
 ```
 
 
-**Function   : **`get_model_diagnostic_tests` will generate model diagnostic tests such as B-P Test and Shapiro-Wilk test to check homoscedasticity and normality of residuals
+**Function   : **`get_model_diagnostic_tests` will generate model diagnostic tests such as:
+                  B-P Test and Shapiro-Wilk test to check homoscedasticity and normality of residuals
 
 **Inputs: **
 
@@ -153,12 +154,16 @@ get_model_diagnostic_tests = function(models, model_names){
   for (idx in 1:n_mod){
     bp_pval = format.pval(bptest(models[[idx]])$p.value)
     diagnostics_metrics_df[model_names[idx], "BP_P_Value"] = bp_pval
-    diagnostics_metrics_df[model_names[idx], "BP_DEC"] = ifelse(bp_pval < 0.05, "Reject", "Fail to Reject")
+    diagnostics_metrics_df[model_names[idx], "BP_DEC"] = ifelse(bp_pval < 0.05, 
+                                                                "Reject", 
+                                                                "Fail to Reject")
     
     # using first 5000 observations for shapiro.test given function limitation in R
     sw_pval = format.pval(shapiro.test(resid(models[[idx]])[1:5000])$p.value)
     diagnostics_metrics_df[model_names[idx], "SW_P_VALUE"] = sw_pval
-    diagnostics_metrics_df[model_names[idx], "SW_DEC"] = ifelse(sw_pval < 0.05, "Reject", "Fail to Reject")
+    diagnostics_metrics_df[model_names[idx], "SW_DEC"] = ifelse(sw_pval < 0.05, 
+                                                                "Reject", 
+                                                                "Fail to Reject")
   }
   
   # Diagnostics of Models
@@ -173,7 +178,8 @@ get_model_diagnostic_tests = function(models, model_names){
 
 ```
 
-**Function   : **`get_model_diagnostic_plots` will generate model diagnostic plots such as Q-Q plot or fitted vs. residuals plot
+**Function   : **`get_model_diagnostic_plots` will generate model diagnostic plots such:
+                  as Q-Q plot or fitted vs. residuals plot
 
 **Inputs: **
 
@@ -181,7 +187,8 @@ get_model_diagnostic_tests = function(models, model_names){
 
 **Returns    : ** None
 
-**Output     : ** Plots showing diagnostic metrics 'Fitted vs. Residuals' & 'Q-Q  Plots' for our top two models.
+**Output     : ** Plots showing diagnostic metrics 'Fitted vs. Residuals' & 'Q-Q  Plots' 
+                  for our top two models.
 
                   Fitted vs. Residuals plots to check LINE assumption - Heteroscedasticity 
                   Q-Q Plot to check LINE assumption - normality of error term
@@ -687,11 +694,11 @@ It is also important to underscore future directions for analyses on this data s
 
 Our team discussed about the idea of extracting meaningful Geo-Spatial insights utilizing variables derived from  `Latitude` and `Longitude`. The hypothesis being, house within 50 mile radius of a large city in California would likely have a higher median price. We considered leveraging Geo-Spatial libraries for this transformation activity. For example 'Haversine Formula' can be used to calculate distance between two points on a sphere based on latitude and longitude. Another alternative considered was to use Euclidean Distance. In the interest of time and to avoid scope creep, we decided not to create these variables. We think there is potential in future to transform this data and include additional Geo-Spatial variables to allow for better modeling. 
 
-Looking at the response variable histogram, it seems that median house prices are capped at the higher end instead of a long tail. We would like to further explore the impacts of this capping in our models. To address this, possibly deleting observations with very high median house prices and build the model only on median housing prices which are not capped. This data modification may limit the use of the model for very high housing prices but will help with overall accuracy (& R-square) for non-capped housing price range.  
+During exploratory data analysis we identified that median house prices histogram is showing an abnormal peak at the tail end of response variable `median_house_value`, rather than usual normal distribution long tail. It would be a good exercise in future to further explore this abnormality observed and transform data to allow for more accurate modeling. To address this it may require deleting observations with very high `median_house_value`, fit the model and run tests. 
 
-Our last model ``cahoudta_2int_txfd_model`` has the highest adjusted r-square on training data, although it suffers from over-fitting issue. We would like to investigate this further with the objective of mitigating over-fitting without sacrificing adjusted r-square performance. 
+The last model explored `cahoudta_2int_txfd_model` has the highest adjusted $R^2$ on training data but also a very high test RMSE which indicates overfitting. As a result we did not choose this model as one of possible solutions. It would be prudent to investigate if any other variable transformation mitigates overfitting, while still retaining high value for adjusted $R^2$ performance. 
 
-Constant variance assumption is still getting violated per BP Test results and 'Fitted vs. Residual' plot. In future, we would have liked to further mitigate the issue by trying additional transformations such as Box-Cox of predictor variables. Similarly, Q-Q plot for top two models look much improved compared to when we started modeling with the untransformed response variable Time permitting, we would have liked to further investigate transformations  of the predictor variables to ensure we the assumption of normality.  
+Constant variance assumption is still being violated as per BP Test results and 'Fitted vs. Residual' plot. It would be interesting to try additional transformations such as Box-Cox of predictor variables and see if resulting model is homoscedastic. Similarly, Q-Q plot for top two models track much better compared to models without log transformation of response variable median_house_value`. 
 
 
 ## Appendix 
