@@ -621,23 +621,13 @@ names(coef_matrix) <- c("Estimate", "Standard Error", "t Value", "P Value")
 kable(coef_matrix, digits = 5, caption = "Table of Predictors and Test Statistics")
 ```
 
-We also ran all the standard diagnostics on this model.
-
-```{r fig.height=12, fig.width=12}
-par(mfrow=c(2, 2))
-
-plot(final_selected_model,
-     pch = 20,
-     col = green_color)
-```
-
-We also ran model diagnostic tests to check linear regression assumptions (LINE) with the help of ``Breusch-Pagan Test`` and ``Shapiro-Wilk Test``. Decision of ``Breusch-Pagan Test`` for all the models was to reject the null hypothesis - meaning constant variable assumption (heteroscedasticity) is violated. Similarly, we found normality of error issue when we ran ``Shapiro-Wilk Test``. The p-value for both the tests for all the models were very low compared to significance level of 0.05.    
+We also ran model diagnostic tests to check linear regression assumptions (LINE) with the help of `Breusch-Pagan Test` and `Shapiro-Wilk Test`. Decision of `Breusch-Pagan Test` for all the models is to reject the null hypothesis indicating violation of constant variable assumption (heteroscedasticity). Similarly, `Shapiro-Wilk Test` test indicates violation of normality assumption.  
 
 ```{r}
 get_model_diagnostic_tests(cahoudta_models, cahoudta_model_names)
 ```
 
-We are showing the model diagnostic plots for our top 2 models 1) ``cahoudta_full_add_model`` and 2) ``cahoudta_add_bckwd_bic_model``. As it can be seen, with log transformation of response we could mitigate the issues of heteroscedasticity and normality of error assumptions. However, both these assumptions are still violated as it can be seen from the plots below. 
+Residual vs Fitted plot and Q-Q plot for the two selected models 1) `cahoudta_full_add_model` and 2) `cahoudta_add_bckwd_bic_model` confirms the violation of assumptions for normality and constant variance. 
 
 ```{r fig.height=8, fig.width=12}
 
@@ -707,9 +697,9 @@ Below we have included a link to our GitHub repo.
 
 ### GitHub Repo for All Project Related Code
 
-In preparation for this project, each of our team members conducted EDA in our own .rmd files. Additionally, team members engaged in model building worked through many iterations that included variable creation, iterating with `step()`, and verifying the model assumptions. For the sake of brevity, we have not included all code used to select our model. However, we would like to leave a link to our GitHub repo where we all files and code developed in service of the project can be found.
+In preparation for this project, each of our team members conducted independent exploratory data analysis with separate .rmd files to understand data thoroughly. Additionally, team members engaged in model building worked through many iterations that included variable creation, iterating with `step()` search, and verifying the model assumptions. For the sake of brevity, we have not included all code used to select our model. However, we would like to leave a link to our GitHub repo where we all files and code developed in service of the project can be found.
 
-**The link to our GitHub repo is [California House Price Prediction](https://github.com/katldewitt/house_price_prediction).**
+The link to our GitHub repo is: [California House Price Prediction](https://github.com/katldewitt/house_price_prediction)
 
 ### Authors
 
