@@ -1,0 +1,716 @@
+---
+title: "STAT 420 Final Project Report: Modeling California Housing Prices"
+author: " "
+date: 'August 3rd, 2022'
+output:
+  html_document: 
+    theme: readable
+    toc: yes  
+  pdf_document: default
+urlcolor: cyan
+---
+
+# Modeling California Housing Prices
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+options(scipen = 1, digits = 4, width = 80, fig.alin = "center")
+
+library(ggplot2)
+library(faraway)
+library(knitr)
+library(broom)
+library(sf)
+library(lmtest)
+
+
+green_color <- "#009E73"
+```
+
+## Introduction
+
+### Executive Summary
+
+In this report we discuss the creation of a linear model to model median house value of a block group in California (CA) in the 1990's based on administrative (Census) data. Given the recent turbulence in the real estate market and associated bidding wars, there is a renewed interest in what the value of a house is. Utilizing methods from STAT 420, we underwent model selection to identify the optimal model that minimized test RMSE, met the assumptions of linear modelling, and had the fewest parameters to enhance explainability. The best linear model was the full additive model, which included the parameters `longitude`, `latitude`, `housing_median_age`, `total_rooms`, `population`, `median_income`, and `ocean_proximity`.This model had a test RMSE of 0.3407 and an adjusted $R^2$ of 0.7597. Our model provides utility in explaining the relationship between how features of a California Block Group relate to the median house value of the block group.
+
+### The Data
+
+For our project we leveraged a data set from kaggle [California Housing Prices](https://www.kaggle.com/datasets/camnugent/california-housing-prices). The data contains information from the 1990 California census and pertains to houses found in a given California district. It contains one row per census block group. A block group is the smallest geographical unit for which the U.S. Census Bureau publishes sample data (a block group typically has a population of 600 to 3,000 people).
+
+The *California Housing Prices* data set pertains to the houses found in a given California district and some summary stats about them based on the 1990 census data. There are 10 columns and 20,640 rows in the data. The columns are as mentioned below: 
+
+| **Column Name**    	   | **Description**                                                                                   	|
+|------------------------|---------------------------------------------------------------------------------------------------	|
+| longitude          	   | Longitudinal location of block group of houses.                                                    |
+| latitude           	   | Latitudinal location of block group of houses                                                     	|
+| housing_median_age 	   | Median age of the houses in the block group                                                       	|
+| total_rooms        	   | Total rooms in the group of houses                                                                	|
+| total_bedrooms     	   | Total bedrooms in the block group                                                                 	|
+| population         	   | Total number of people in the block group                                                         	|
+| households         	   | Households comprised in the block group                                                           	|
+| median_income      	   | Median income calculated from the individual income of house.                                     	|
+| median_house_value 	   | Median house value of a block group.                                                              	|
+| ocean_proximity    	   | Indicating whether each block group is near the ocean, near the Bay Area, inland or on an island. 	|
+
+
+### Limitations of the Data 
+
+In order to ensure the reader understands the caveats of working with our data, we first want to underscore the differences between census housing data and typical sources of real estate data. The census data set, unlike scraped real estate data, is gathered by an administrative body, the Census. Since the stakeholder involved in collecting the data is not interested in selling a house, we see different features represented that relate more to geography (Latitude, longitude), population density (population, number of households), and age of the building (median_housing_age).The data set is aggregated at the block level (rather than at the house level). This means our analysis was not directly modelling housing values, but the median housing value of a neighborhood. We  believe this helped us better to understand the value of the neighborhood as opposed to the value of the amenities of the individual houses.
+
+Another important limitation of the source of this data is the date range. Since the data were gathered as part of the 1990 Census, we cannot extrapolate to current housing prices or utilize the model to explain what features are important to median house value at any other time period. For this particular reason, we focused our project on modelling rather than prediction. While there are few use cases for a prediction algorithm for median house value of a census block group in the 1990's at the present date, understanding historical features that related to a census block groups' price point provides an opportunity for understanding how median house price varied based on parameters at the time of data collection.
+
+## Methods
+
+We will now discuss the steps we used to generate our linear model. We began by conducting exploratory data analysis (EDA). Based on the EDA, we identified steps necessary to clean our data. In order to ensure our model was not overfit, we split the data set into a 70-30 train-test split. Next we underwent model selection process to minimize the test RMSE of our model. In order to conduct model selection and graph the results, we leveraged helper functions that we will describe before diving into the model selection.
+
+
+### Helper Functions
+
+**Function   : **`model_performance_metrics` will generate model performance metrics such as RMSE and R-squared, etc.
+
+**Inputs: **
+
+*models      : * A list of models to generate the performance metrics
+
+*model_names : * Names of the models passed to the function
+
+*data        :* The actual data which will be used to calculate predicted values and RMSE for each model
+
+**Output     : ** Table with following performance metrics as columns and a row for each model 
+                  provided in `model_names` as input.
+
+                  Adjusted R-Squared
+                  Root Mean Square Error on Training Data
+                  Root Mean Square Error on Test Data
+                  Leave One Out Cross Validated RMSE
+                  Total number of coefficients in the model
+```{r}
+model_performance_metrics = function(models, model_names, data){
+  # Calculate model names and total numbers
+  n_mod = length(models)
+  # Initialize the data frame to be be built by the function
+  perf_metrics_df = data.frame(
+    row.names = model_names,
+    "ADJR2" = rep(0L, n_mod),
+    "Train.RMSE" = rep(0L, n_mod),
+    "Test.RMSE"  = rep(0L, n_mod),
+    "LOOCV_RMSE" = rep(0L, n_mod),
+    "Coefs" = rep(0L, n_mod)
+  )
+  # Extract actual response values
+  y_i = log(data[["median_house_value"]])
+  
+  for (idx in 1:n_mod){
+    perf_metrics_df[model_names[idx], "ADJR2"] = summary(models[[idx]])$adj.r.squared 
+    perf_metrics_df[model_names[idx], "Train.RMSE"] = sqrt(mean(resid(models[[idx]]) ^ 2)) 
+    y_hat = predict(models[[idx]], newdata = data)
+    perf_metrics_df[idx, "Test.RMSE"] = sqrt(mean((y_i - y_hat) ^ 2))    
+    perf_metrics_df[model_names[idx], "LOOCV_RMSE"] = sqrt(mean((resid(models[[idx]]) / 
+                                                      (1 - hatvalues(models[[idx]]))) ^ 2)) 
+    perf_metrics_df[model_names[idx], "Coefs"] = length(coef(models[[idx]]))
+  }
+
+  # Print Model performance on train data
+  kable(perf_metrics_df,
+        col.names = c("Adjusted R-Squared",
+                      "Train RMSE",
+                      "Test RMSE",
+                      "LOOCV RMSE", 
+                      "Coefficients"),
+        caption = "Comparative Model Performance Metrics")
+
+}
+```
+
+
+**Function   : **`get_model_diagnostic_tests` will generate model diagnostic tests such as:
+                  B-P Test and Shapiro-Wilk test to check homoscedasticity and normality of residuals
+
+**Inputs: **
+
+*models      : * A list of models and model names to generate the results table
+
+**Output     : ** Table with following diagnostic metrics as columns and a row for each model 
+                  provided in `model_names` as input.
+
+                  B-P Test P-Value
+                  B-P Test Decision
+                  Shapiro-Wilk Test P-Value
+                  Value	Shapiro-Wilk Test Decision
+
+```{r}
+
+get_model_diagnostic_tests = function(models, model_names){
+  
+  n_mod = length(models)
+  
+  diagnostics_metrics_df = data.frame(
+    row.names = model_names,
+    "BP_P_Value" = rep(0.0, n_mod),
+    "BP_DEC" = rep("", n_mod),
+    "SW_P_VALUE"  = rep(0.0, n_mod),
+    "SW_DEC" = rep("", n_mod)
+  )
+  
+  for (idx in 1:n_mod){
+    bp_pval = format.pval(bptest(models[[idx]])$p.value)
+    diagnostics_metrics_df[model_names[idx], "BP_P_Value"] = bp_pval
+    diagnostics_metrics_df[model_names[idx], "BP_DEC"] = ifelse(bp_pval < 0.05, 
+                                                                "Reject", 
+                                                                "Fail to Reject")
+    
+    # using first 5000 observations for shapiro.test given function limitation in R
+    sw_pval = format.pval(shapiro.test(resid(models[[idx]])[1:5000])$p.value)
+    diagnostics_metrics_df[model_names[idx], "SW_P_VALUE"] = sw_pval
+    diagnostics_metrics_df[model_names[idx], "SW_DEC"] = ifelse(sw_pval < 0.05, 
+                                                                "Reject", 
+                                                                "Fail to Reject")
+  }
+  
+  # Diagnostics of Models
+  kable(diagnostics_metrics_df,
+        col.names = c("B-P Test P-Value",
+                      "B-P Test Decision",
+                      "Shapiro-Wilk Test P-Value",
+                      "Shapiro-Wilk Test Decision"),
+        caption = "Comparative Model Diagnostics")
+}
+
+
+```
+
+**Function   : **`get_model_diagnostic_plots` will generate model diagnostic plots such:
+                  as Q-Q plot or fitted vs. residuals plot
+
+**Inputs: **
+
+*models      : * A list of models to generate the plots
+
+**Returns    : ** None
+
+**Output     : ** Plots showing diagnostic metrics 'Fitted vs. Residuals' & 'Q-Q  Plots' 
+                  for our top two models.
+
+                  Fitted vs. Residuals plots to check LINE assumption - Heteroscedasticity 
+                  Q-Q Plot to check LINE assumption - normality of error term
+                  
+```{r}
+get_model_diagnostic_plots = function(models, model_names){
+  
+  n_mod = length(models)
+  
+  par(mfrow=c(1,2))
+  for (i in 1:n_mod){
+    plot(fitted(models[[i]]), resid(models[[i]]), 
+       col = green_color, 
+       pch = 20, 
+       xlab = "Fitted", 
+       ylab = "Residuals", 
+       main = paste0("Fitted vs. Residual for ", 
+                     model_names[[i]])
+       )
+    abline(h = 0, col = "darkorange", lwd = 2)
+  }
+
+  par(mfrow=c(1,2))
+  for (i in 1:n_mod){
+    qqnorm(resid(models[[i]]), col = green_color, pch = 20,  
+         main = paste0("Q-Q Plot for ", 
+                       model_names[[i]]), 
+         )
+    qqline(resid(models[[i]]), col = "darkorange", lwd = 2)
+  }
+}
+
+```
+
+### Data Cleaning
+
+Our first step to cleaning the data was reading in the CSV file from kaggle.com. Our team members reviewed the first five rows to ensure that there were no encoding issues reading in the raw data into R.
+
+```{r}
+#read in the data
+read_in <- function(){
+  ca_housing_data = read.csv('housing.csv')
+  ca_housing_data
+}
+
+ca_housing_data <- read_in()
+head(ca_housing_data)
+```
+
+
+The first thing we we looked at were basic summary statistics and missingness. We found that there were 207 observation missing `total_bedrooms`. We cannot generate a linear model with missing data. However, looking at the collinearity, we will find a solution that allows us to keep these observations.
+
+```{r}
+summary(ca_housing_data)
+
+#How many missing values do we have?
+colSums(is.na(ca_housing_data))
+```
+
+As part of data cleaning, we plotted the `median_house_value` against latitude and longitude to visualize the locations of the different houses. One of the first things we noticed were two distinct clusters of highly priced houses that appear to correspond to Los Angeles and the San Francisco Bay Area in bright red. The lighter green dots in the plot illustrate the lowest priced houses. Note that this scale differentiates by color using the median `median_house_value` as a midpoint, which helps to illustrate concentrated areas of high price values.
+
+```{r fig.height=8, fig.width=12}
+## Map the data
+#Source: https://stackoverflow.com/questions/65233613/plot-a-map-using-lat-and-long-with-r
+my_sf <- st_as_sf(ca_housing_data, coords = c('longitude', 'latitude'))
+my_sf <- st_set_crs(my_sf, value = 4326)
+
+hs_value_plot <- ggplot(my_sf) + 
+  geom_sf(aes(color = median_house_value)) +
+              labs( y = "Longitude", 
+                    x = "Latitude",
+                    title = "Graphic Of Median House Value by Location") +
+  scale_colour_gradient2(low = green_color,
+    midpoint = median(ca_housing_data$median_house_value),
+    high = "#D55E00") 
+
+hs_value_plot
+```
+
+We also generated histograms for all relevant predictors. Please note that not all EDA was included in this report; additional code from EDA can be found on our [GitHub Repo for All Project Related Code]. The linked section includes the link and describes the relevant .rmd files that were out of scope of this report.
+
+The most important finding discovered while performing EDA was the long tail of our outcome variable `median_house_value`. As displayed below in the histogram, we have a number of houses that are at the top end of the range.
+
+```{r}
+ggplot(ca_housing_data, aes(median_house_value)) +
+  geom_histogram(fill = green_color, color= "#FFFFFF", bins = 15) +
+  labs( y = "Count of Block Groups", 
+                    x = "Median House Value in USD",
+                    title = "Histogram of Median House Values")
+```
+
+**Based on the histogram, we see that our response variable could benefit from a log transformation.** Generally most dollar variables require a log transformation, and `median_house_value` is no different. This log transformation will also assist with linear model assumptions during model selection.
+
+```{r}
+ggplot(ca_housing_data, aes(log(median_house_value))) +
+  geom_histogram(fill = green_color, color= "#FFFFFF", bins = 15) +
+  labs( y = "Count of Block Groups", 
+                    x = "Median House Value in USD",
+                    title = "Histogram of Median House Values")
+```
+
+In addition to looking at graphs and reviewing summary statistics, we also began to identify variables with collinearity issues via a correlation matrix and pairwise plot. In the pairwise plot we see that `total_bedrooms` is highly collinear with `total_rooms`, but `total_rooms` is not missing any values. With this in mind, we can utilize the variable `total_rooms` to preserve the 207 observations. 
+
+```{r}
+## pairs & Cor matrix
+numeric_vals <- unlist(lapply(ca_housing_data, is.numeric), use.names = FALSE)  
+pairs(ca_housing_data[,numeric_vals], col=green_color)
+round(cor(ca_housing_data[,numeric_vals]), 2)
+#Population and households are collinear
+#Population and Total rooms are also collinear
+#latitude and longitude are also highly correlated
+
+#Remove total_bedrooms
+ca_housing_data <- subset(ca_housing_data, select=-c(total_bedrooms))
+```
+
+We have another column `ocean_proximity` which is a categorical variable indicating how close the block is from ocean. Using latitude and longitude, we can see how this factor variable helps to classify different census blocks. Keeping in mind that we saw distinct clusters of highly priced median house value in the Bay Area (see the blue "NEAR BAY" region) and LA (around 34N, 118W "NEAR OCEAN" region), this factor along with latitude and longitude will help us to capture the geographic nature of housing value.
+
+
+```{r fig.height=8, fig.width=12}
+ggplot(my_sf) + 
+  geom_sf(aes(color = ocean_proximity)) +
+              labs( y = "Longitude", 
+                    x = "Latitude",
+                    title = "Ocean Proximity by Location")
+```
+
+In the table below, the reader can see this column has 5 different categories. It is important to note that the `ISLAND` category has only 5 observations. During initial analysis, our team determined that `ISLAND` has a substantially higher average value of response variable `median_house_value` than the other categories as illustrated by the below box-plot. This fact is problematic for our purpose. We will be dropping the rows from data set with `ISLAND` category and coercing the predictor `ocean_proximity` to be categorical.
+
+```{r}
+#Ocean proximity - only 5 in island, and substantially different. I propose removing from consideration to avoid overfitting depending on an unlucky test/train split
+table(ca_housing_data$ocean_proximity) 
+boxplot(median_house_value ~ ocean_proximity, 
+        ca_housing_data,
+        main = "Boxplot of Median House Value by Ocean Proximity",
+        ylab = "Median House value in USD",
+        xlab = "Ocean Proximity",
+        col = green_color)
+
+#Remove the islands rows
+ca_housing_data = ca_housing_data[ca_housing_data$ocean_proximity != "ISLAND",]
+
+#Now we turn it into a factor after dropping that level
+ca_housing_data$ocean_proximity <- as.factor(ca_housing_data$ocean_proximity)
+```
+
+At this point, we have concluded the prerequisite data cleaning based on EDA and can move onto model selection. Our final data set used for modelling has `r nrow(ca_housing_data)` rows and `r ncol(ca_housing_data)` columns. The summary statistics can be found below.
+
+
+```{r}
+#Final data set and quality assurance
+summary(ca_housing_data)
+str(ca_housing_data)
+
+#QA: assert no missing values
+if(any(colSums(is.na(ca_housing_data)) > 0)){
+  stop("Fatal error. Missing data is one or more columns")
+}
+
+#QA: Assert that there are only 4 levels in ocean_proximity
+if(length(levels(ca_housing_data$ocean_proximity)) != 4){
+  stop("Fatal error. There are not 4 levels in ocean_proximity")
+}
+```
+
+
+### Model Selection Process
+
+After cleaning the data, we proceeded with building a model. The very first step we took was to divide data into train and test. Based on total number of observations in the data set, team decided to use 70%-30% split for train-test data.
+
+
+We first initialized global variables and created helper functions (which are listed above in [Helper Functions]).
+
+```{r}
+# build different models to test the performance
+n_models = 9
+# create a vector list of models to pass to various functions
+cahoudta_models = vector("list", length = n_models)
+cahoudta_model_names = vector("character", length = n_models)
+# Train-Test Split Ration
+tr_pct = 0.70
+```
+
+In order to replicate the results, we set a seed to ensure that the test train split of our data was consistent between team members. After creating both the test and train data set, we began building models.
+
+```{r}
+set.seed(420072022)
+# Randomly select train indexes
+cahoudta_trn_idx = sample(nrow(ca_housing_data), 
+                          size = trunc(tr_pct * nrow(ca_housing_data)))
+# Split into train and test data sets based on the index
+ca_housing_data.tr = ca_housing_data[cahoudta_trn_idx, ]
+ca_housing_data.te = ca_housing_data[-cahoudta_trn_idx, ]
+
+n_tr_rows = nrow(ca_housing_data.tr)
+n_te_rows = nrow(ca_housing_data.te)
+```
+
+In the process of model selection, we built a total of `r n_models` different models. While recursively analyzing different model predictors and transformations, our team identified that there are few outlier observations which result in issues with the model training. So we circled back to the very first full additive model and identified these outliers using Cook's Distance.
+
+```{r}
+cahoudta_full_add_model_cd = lm(log(median_house_value) ~ ., data = ca_housing_data.tr)
+cd_full_add_mod = cooks.distance(cahoudta_full_add_model_cd)
+(count_outliers = sum(cd_full_add_mod > 4 / length(cd_full_add_mod)))
+percent_outliers = count_outliers / nrow(ca_housing_data.tr) 
+```
+
+There were a total of `r count_outliers` observations deemed as influential based on the heuristic $D_i > \frac{4}{n}$ where $D_i$ is the distance of the $i$th observation and $n$ is the number of observations. Given that these outliers represent only `r scales::percent(percent_outliers)` of the training data, our team decided to drop these outliers from the training data set.
+
+When we re-fit the full additive model by ignoring these **`r count_outliers`** outliers we found that ultimately this model supplied the best Test RMSE.
+
+```{r}
+cahoudta_full_add_model = lm(log(median_house_value) ~ ., 
+                             data = ca_housing_data.tr,
+                             subset = (cd_full_add_mod <= 4 / length(cd_full_add_mod)))
+```
+
+After making this adjustment, we investigated multi-collinearity in the full fitted additive model. Given this model includes all variables, we wanted to ascertain if we would be introducing issues using highly collinear variables. To evaluate this empirically, we calculated the variable inflation factor (VIF) of the predictors and printed those with a VIF greater than 5.
+
+```{r}
+high_vif_predictors = vif(cahoudta_full_add_model) > 5
+high_vif_pred_vals = vif(cahoudta_full_add_model)[high_vif_predictors]
+sort(high_vif_pred_vals, decreasing = TRUE)
+```
+
+Based on the above VIF values, we concluded the predictors `households` and `latitude` could be dropped. However, we ultimately found these predictors were consistently selected in procedures that we used to optimize the model. Keeping these collinear variables in the final selected model is a limitation of our final model.
+
+We also reviewed the `pairs()` function with a new column for the logged response value to ensure we were aware of collinearity. The secondary reason for re-running this plot during model selection was to generate ideas about the relationships between the predictors and the response. For instance, if we had seen a clearly quadratic relationship, we could have used a polynomial term to improve fit.
+
+```{r fig.height=8, fig.width=12}
+pairs(subset(cbind(ca_housing_data.tr, log(ca_housing_data.tr$median_house_value)), 
+             select = -ocean_proximity), 
+      col = green_color)
+```
+
+When we reviewed the pairs plot and for response variable `log(median_house_value)`, we noticed the following observations:
+
+- Variables `median_income`, `households`, `total_rooms` have some polynomial relationship.
+- Variable `housing_median_age` has lot of variance and needs variable transformation.
+- Either one of `latitude` or `longitude` can be eliminated due to high partial collinearity.
+
+At this point, we will return to model building with the above hypotheses coming into play in later models. In order to ensure that we selected the model that minimized test RMSE without sacrificing interpretability, we decided to conduct a backward search using BIC. We decided to utilized BIC over AIC because BIC's penalty accounts for penalizing larger models. Using the `step()` function for our BIC backward selection with the full additive model as our base, we found that the resulting model removed the predictor `total_rooms`. The implication is that the removal of `total_rooms` would result in a smaller model with better predictive power. Since the step-wise search stopped after removing a single variable, the algorithm found that removing any additional variables would result in an unacceptable increase in the BIC.
+
+```{r}
+cahoudta_add_bckwd_bic_model = step(cahoudta_full_add_model, 
+                                    direction = "backward",
+                                    k = log(n_tr_rows),
+                                    trace = 0)
+```
+Our next attempt was to create a model with two-way interactions for each predictor. Our thinking here was that we could use the full interaction model as a basis for another backward search. Given the number of terms in the two way interaction model, this model sacrifices interpretability for the sake of lower train RMSE and higher $R^2$.
+
+```{r}
+cahoudta_2int_add_model = lm(log(median_house_value) ~ . ^ 2, 
+                             data = ca_housing_data.tr)
+
+ncoefs_2int_add_model <- length(coef(cahoudta_2int_add_model))
+```
+
+We next tried backward BIC search from two way interaction full additive model.
+
+```{r}
+cahoudta_2int_bckwd_bic_model = step(cahoudta_2int_add_model, 
+                                    direction = "backward",
+                                    k = log(n_tr_rows),
+                                    trace = 0)
+ncoefs_2int_backward_bic_model <- length(coef(cahoudta_2int_bckwd_bic_model))
+```
+
+The resulting backward BIC model has `r ncoefs_2int_backward_bic_model` compared to the `r ncoefs_2int_add_model` coefficients with which the full interaction model started. Although this decrease is an improvement, interpretability of the model will still be very difficult.
+
+Our next set of models utilized our hypotheses about removing collinear variables to improve model performance. We started by dropping the predictors `households` and `latitude` due to their high VIF. The result was an additive model comprised of only low VIF predictors. However, the Adjusted $R^2$ value of this model dropped by about 0.1 relative to the previous models.
+
+```{r}
+predictor_variables = colnames(ca_housing_data.tr)[-which(colnames(ca_housing_data.tr)
+                                                          == "median_house_value")]
+drop_cols = which(colnames(ca_housing_data.tr) == "median_house_value" | 
+                    colnames(ca_housing_data.tr) == "households" | 
+                    colnames(ca_housing_data.tr) == "latitude")
+smaller_predictors = colnames(ca_housing_data.tr)[-drop_cols]
+less_preds = paste0("log(median_house_value) ~ ", 
+                    paste(smaller_predictors, collapse = " + "))
+cahoudta_lowvif_add_mod = lm(formula = less_preds, data = ca_housing_data.tr)
+```
+
+Due to the drop in the Adjusted $R^2$, we tried a model that added two-way interactions for the low VIF variables. Unfortunately, this did not substantially improve the $R^2$ or train RMSE.
+
+```{r}
+less_preds_2int = paste0("log(median_house_value) ~ (", 
+                         paste(smaller_predictors, collapse = " + "), ") ^ 2")
+cahoudta_lowvif_2int_mod = lm(formula = less_preds_2int, data = ca_housing_data.tr)
+```
+
+We held out hope for the low VIF predictors as a source of a good model. In fact, we tried to leverage a 2nd degree polynomial to see if the model would improve. Note that in creation of this model we had to exclude the categorical predictor `ocean_proximity` from polynomial formula. Sadly, the Adjusted $R^2$ improved by less than 0.01 for this addition in model complexity.
+
+```{r}
+drop_cols = which(colnames(ca_housing_data.tr) == "median_house_value" | 
+                    colnames(ca_housing_data.tr) == "households" | 
+                    colnames(ca_housing_data.tr) == "latitude")
+reduced_predictors = colnames(ca_housing_data.tr)[-drop_cols]
+less_preds = paste0("log(median_house_value) ~ ", paste(smaller_predictors, 
+                                                        collapse = " + "))
+further_reduced_predictors = reduced_predictors[-which(reduced_predictors 
+                                                       == "ocean_proximity")]
+less_poly_preds = paste0(" + I(", paste(further_reduced_predictors, 
+                                        collapse = " ^ 2) + I("), " ^ 2)")
+poly_formula = paste0(less_preds, less_poly_preds)
+message("Polynomial Formula: ", poly_formula)
+cahoudta_lowvif_2poly_mod = lm(formula = poly_formula, data = ca_housing_data.tr)
+```
+
+After having little to no success with removing the high VIF predictors, we decided to reinstate one of the collinear variables, `latitude`. This model with both `longitude` and `latitude` but without `households` lacked the performance requisite to justify its selection. Specifically, we saw that this model has a lower adjusted $R^2$ by 0.1 than the full additive model. Additionally, the train RMSE was 0.07 higher, which was in the range of the other models which had dropped both `latitude` and `households`.
+
+```{r}
+drop_cols = which(colnames(ca_housing_data.tr) == "median_house_value" | 
+                    colnames(ca_housing_data.tr) == "households")
+lesser_predictors = colnames(ca_housing_data.tr)[-drop_cols]
+less_preds = paste0("log(median_house_value) ~ ", 
+                    paste(lesser_predictors, 
+                          collapse = " + "))
+message("Model 8: Formula: ", less_preds)
+cahoudta_lola_add_mod = lm(formula = less_preds, data = ca_housing_data.tr)
+```
+
+Our final step was to attempt variable transformations to attempt to better capture the variance in the response variable. We transformed predictors `population` and `total_rooms` to be normalized with predictor `households`. We thought derived variables 'rooms_per_hh' and 'pop_per_hh' would add predictive power to the model because of the following reasons. 
+
+- ``rooms_per_hh``: houses with higher number of rooms per household in a block would be larger having a positive correlation with median housing prices 
+
+- ``pop_per_hh``: block with bigger houses will attract larger families (population_per_household)
+
+
+```{r}
+ca_housing_data.tr$pop_per_hh = (ca_housing_data.tr$population / 
+                                   ca_housing_data.tr$households)
+ca_housing_data.tr$rooms_per_hh = (ca_housing_data.tr$total_rooms / 
+                                     ca_housing_data.tr$households)
+ca_housing_data.te$pop_per_hh = (ca_housing_data.te$population / 
+                                   ca_housing_data.te$households)
+ca_housing_data.te$rooms_per_hh = (ca_housing_data.te$total_rooms / 
+                                     ca_housing_data.te$households)
+```
+
+We fit a additive model with transformed variables and predictors without high variation inflation factors or collinearity. While both train RMSE and adjusted $R^2$ plummeted, when we reveled the test RMSE we found that this model was significantly overfit for our training data. The test RMSE of the model with transformed variables was nearly 5 times that of the other models. Our team learned a great deal about how some variable transformations can contribute a good training model based on observations of the data, but when extrapolated to unseen data, they can wreck havoc.
+
+```{r}
+cahoudta_2int_txfd_model_cd = lm(log(median_house_value) ~ 
+                                (longitude + 
+                                   housing_median_age +
+                                   median_income + 
+                                   pop_per_hh + 
+                                   rooms_per_hh +
+                                   ocean_proximity ) ^ 2,
+                              data = ca_housing_data.tr)
+cd_2int_txfd = cooks.distance(cahoudta_2int_txfd_model_cd)
+cahoudta_2int_txfd_model = lm(log(median_house_value) ~ 
+                                (longitude + 
+                                   housing_median_age +
+                                   median_income + 
+                                   pop_per_hh + 
+                                   rooms_per_hh +
+                                   ocean_proximity ) ^ 2,
+                              data = ca_housing_data.tr,
+                              subset = (cd_2int_txfd <= 4 / length(cd_2int_txfd)))
+```
+
+After creating the 9th and final model, we recognized we were getting diminishing returns on additional iterations. At this point, we generated our evaluation criteria into a chart and discussed as a group what model we would like to select. 
+
+### Comparative Model Performance Metrics
+
+We next compared all the models to calculate and display the performance metrics.
+
+```{r}
+cahoudta_models[[1]] = cahoudta_full_add_model
+cahoudta_model_names[[1]] = "cahoudta_full_add_model"
+
+cahoudta_models[[2]] = cahoudta_add_bckwd_bic_model
+cahoudta_model_names[[2]] = "cahoudta_add_bckwd_bic_model"
+
+cahoudta_models[[3]] = cahoudta_2int_add_model
+cahoudta_model_names[[3]] = "cahoudta_2int_add_model"
+
+cahoudta_models[[4]] = cahoudta_2int_bckwd_bic_model
+cahoudta_model_names[[4]] = "cahoudta_2int_bckwd_bic_model"
+
+cahoudta_models[[5]] = cahoudta_lowvif_add_mod
+cahoudta_model_names[[5]] = "cahoudta_lowvif_add_mod"
+
+cahoudta_models[[6]] = cahoudta_lowvif_2int_mod
+cahoudta_model_names[[6]] = "cahoudta_lowvif_2int_mod"
+
+cahoudta_models[[7]] = cahoudta_lowvif_2poly_mod
+cahoudta_model_names[[7]] = "cahoudta_lowvif_2poly_mod"
+
+cahoudta_models[[8]] = cahoudta_lola_add_mod
+cahoudta_model_names[[8]] = "cahoudta_lola_add_mod"
+
+cahoudta_models[[9]] = cahoudta_2int_txfd_model
+cahoudta_model_names[[9]] = "cahoudta_2int_txfd_model"
+
+# Print Comparative Model performance on train data
+model_performance_metrics(cahoudta_models, 
+                          cahoudta_model_names, 
+                          ca_housing_data.te)
+
+#Final_selected_model
+final_selected_model <- cahoudta_add_bckwd_bic_model
+```
+
+As mentioned throughout the narrative, our first model `cahoudta_full_add_model` had surprisingly good performance at the outset and became the model to beat. However, as visible from the results above, the backward BIC search did help in reducing number of $\beta$ parameters by 1. Both the full model `cahoudta_full_add_model` and backward step wise search model `'cahoudta_add_bckwd_bic_model` had similar train RMSE, test RMSE, and adjusted $R^2$. Since the model `cahoudta_add_bckwd_bic_model` is smaller,  it was a strong contender for selection after creating only two models, but we also wanted to remove collinear variables, explore variable transformations, and leverage interaction terms.
+
+When we tried to reduce the variables manually by removing  both `latitude` and `longitude`, we found the reductions in the adjusted $R^2$ and increase in train RMSE unacceptable. Trying more complex models like two-way interactions and polynomials did not provide significant pay off in improvements to adjusted $R^2$ or decreases in train RMSE. Finally, the variable transformation model appeared to have a very good fit of the training data set in both the value of the adjusted $R^2$ and train RMSE.
+
+Our group had decided at the outset that the minimization of test RMSE, an interpretable model, and a reasonable adjusted $R^2$ were the essential trade-offs when selecting a model. Looking at test RMSE in particular, we immediately eliminated the possibility of using the transformed variable model. The models with the lowest test RMSE had over 40 coefficients, which would make analysis challenging. Ultimately, the model `cahoudta_add_bckwd_bic_model` had the best combination of adjusted $R^2$, low enough test RMSE, and a reasonable number of coefficients. Below, we will discuss the selected model further.
+
+## Results
+
+During the model building process, we explored **`r n_models`** different models for our housing data set. Recall that the main goal for this project was to effectively model the California Housing Data and identify the predictors which help explain the `median_house_value` response variable. Based on table [Comparative Model Performance Metrics](#comparative-model-performance-metrics) we select model `cahoudta_add_bckwd_bic_model` as our best model for purpose of this project. 
+
+The final selected model has following features:
+
+- High *adjusted $R^2$* of **0.7596**
+- Lowest *Test RMSE* of **0.3407**
+- Lowest *Train RMSE* of **0.26878**
+- Lowest number of coefficients **(10)** makes this model easy to interpret and computationally efficient.
+
+The following are all the predictors for the model `cahoudta_add_bckwd_bic_model` with test statistics and p-values.
+
+```{r}
+coef_matrix <- data.frame(coef(summary(final_selected_model)))
+names(coef_matrix) <- c("Estimate", "Standard Error", "t Value", "P Value")
+kable(coef_matrix, digits = 5, caption = "Table of Predictors and Test Statistics")
+```
+
+We also ran model diagnostic tests to check linear regression assumptions (LINE) with the help of `Breusch-Pagan Test` and `Shapiro-Wilk Test`. Decision of `Breusch-Pagan Test` for all the models is to reject the null hypothesis indicating violation of constant variable assumption (heteroscedasticity). Similarly, `Shapiro-Wilk Test` test indicates violation of normality assumption.  
+
+```{r}
+get_model_diagnostic_tests(cahoudta_models, cahoudta_model_names)
+```
+
+Residual vs Fitted plot and Q-Q plot for the two selected models 1) `cahoudta_full_add_model` and 2) `cahoudta_add_bckwd_bic_model` confirms the violation of assumptions for normality and constant variance. 
+
+```{r fig.height=8, fig.width=12}
+
+# No of models for comparative charts 
+n_top_models = 2
+
+# create a vector list of models to pass to various functions
+top_cahoudta_models = vector("list", length = n_top_models)
+top_cahoudta_model_names = vector("character", length = n_top_models)
+
+top_cahoudta_models [[1]] = cahoudta_full_add_model
+top_cahoudta_model_names[[1]] = "cahoudta_full_add_model"
+
+top_cahoudta_models[[2]] = cahoudta_add_bckwd_bic_model
+top_cahoudta_model_names[[2]] = "cahoudta_add_bckwd_bic_model"
+
+
+get_model_diagnostic_plots(top_cahoudta_models, top_cahoudta_model_names)
+```
+
+
+## Discussion
+
+We selected the model from backward selection with the base as the full additive model for modeling `median_house_value`. Our model provides utility in explaining the relationship between how features of a California Block Group relate to the log of the median house value of the block group. In this section, we will discuss how this model is useful and interpret the model's $\hat{\beta}$ parameters.
+
+### Utility of Model
+
+As noted above in section [Limitations of the Data](#limitations-of-the-data), our data is from the 1990 Census, which means we are not using this model for prediction but for explanation. Now that we have identified the best model with the available predictors, we can utilize the model to explain the relationship of geography to the `median_house_value` of a block group in California. The following section is useful to understand historical context of the California real estate market. We can also use this model to ask questions about the directionality and impact of the different predictors on `median_house_value`. In other words, our model allows us to answer question "Does a higher income block group have a higher average `median_house_value`?" 
+
+### Interpretation of Model in Context of CA Block Groups in 1990s
+
+There are noteworthy things about the below table of $\hat{\beta}$'s when discussing the model. The first is to note is that since we did a log transformation of the response, we will need to exponentiate the $\hat{\beta}$'s to correctly interpret the multiplicative effect of each of these parameters on `median_house_value`. For ease of interpretability, we have exponentiated the coefficients and then subtracted 1. This is because a coefficient less than 1 should be interpreted as a percent decrease in the average `median_house_value`, whereas a coefficient greater than 1 should be interpreted as a percent increase in the average `median_house_value`.
+
+```{r}
+coefs_exponentiated <- data.frame("Betas Exponentiated" = (exp(coef(final_selected_model)) - 1) * 100)
+kable(coefs_exponentiated)
+```
+
+Next, we discuss the role geography played in `median_house_value`. For the purpose of discussions, we included once again the graph of `median_house_value` based on latitude and longitude to allow the reader to review the model's findings against the geographical spread of the response variable.
+
+```{r fig.height=8, fig.width=12}
+hs_value_plot
+```
+
+Please note that our base level for `ocean_proximity` is "<1H OCEAN". The implication is that the average `median_house_value` of a block group decreases for any other `ocean_proximity`. This is not surprising based on the above graphic where we see discrete clusters of high value houses in San Francisco and Los Angeles. The model found that blocks classified as "INLAND" had a `r abs(coefs_exponentiated["ocean_proximityINLAND",])`% decrease in average `median_house_value` relative to the blocks classified as "<1H OCEAN". 
+
+The other two geographical variables, latitude and longitude, also have interesting interpretations based on our priors expecting geography to play a major role in price in 1990 CA block group house value. Specifically, for every 1 unit increase in latitude (moving Westward), we see a `r abs(coefs_exponentiated["latitude",])`% decrease in `median_house_value`. Similarly,  for every 1 unit increase in longitude (moving North), we see a `r abs(coefs_exponentiated["longitude",])`% decrease in `median_house_value`.
+
+The other key $\hat{\beta}$ to call attention to is that for `median_income`. For every 1 unit increase in median income, we see `r abs(coefs_exponentiated["median_income",])`% increase in the `median_house_value`. In other words, the model found that blocks with higher incomes would have higher values of `median_house_value`. 
+
+### Future Directions and Lessons Learned
+
+It is also important to underscore future directions for analyses on this data set. Due to time constraints of this project our group was not able to implement some of these techniques. We also wanted to limit concepts and techniques from the course (STAT 420) while executing this final project. This section is meant to emphasize the careful considerations utilized by our team while building a simpler but effective model for the available data set.
+
+Our team discussed about the idea of extracting meaningful Geo-Spatial insights utilizing variables derived from  `Latitude` and `Longitude`. The hypothesis being, house within 50 mile radius of a large city in California would likely have a higher median price. We considered leveraging Geo-Spatial libraries for this transformation activity. For example 'Haversine Formula' can be used to calculate distance between two points on a sphere based on latitude and longitude. Another alternative considered was to use Euclidean Distance. In the interest of time and to avoid scope creep, we decided not to create these variables. We think there is potential in future to transform this data and include additional Geo-Spatial variables to allow for better modeling. 
+
+During exploratory data analysis we identified that median house prices histogram is showing an abnormal peak at the tail end of response variable `median_house_value`, rather than usual normal distribution long tail. It would be a good exercise in future to further explore this abnormality observed and transform data to allow for more accurate modeling. To address this it may require deleting observations with very high `median_house_value`, fit the model and run tests. 
+
+The last model explored `cahoudta_2int_txfd_model` has the highest adjusted $R^2$ on training data but also a very high test RMSE which indicates overfitting. As a result we did not choose this model as one of possible solutions. It would be prudent to investigate if any other variable transformation mitigates overfitting, while still retaining high value for adjusted $R^2$. 
+
+Constant variance assumption is still being violated as per BP Test results and 'Fitted vs. Residual' plot. It would be interesting to try additional transformations such as Box-Cox of predictor variables and see if resulting model is homoscedastic. Similarly, Q-Q plot for top two models track much better compared to models without log transformation of response variable `median_house_value`. 
+
+
+## Appendix 
+
+Below we have included a link to our GitHub repo.
+
+### GitHub Repo for All Project Related Code
+
+In preparation for this project, each of our team members conducted independent exploratory data analysis with separate .rmd files to understand data thoroughly. Additionally, team members engaged in model building worked through many iterations that included variable creation, iterating with `step()` search, and verifying the model assumptions. For the sake of brevity, we have not included all code used to select our model. However, we would like to leave a link to our GitHub repo where we all files and code developed in service of the project can be found.
+
+The link to our GitHub repo is: [California House Price Prediction](https://github.com/katldewitt/house_price_prediction)
+
+### Authors
+
+Team Member's Names: 
+
+- Kathryn DeWitt
+- Shashank Thakur
+- Avinash Tiwari
+
+NetIDs: 
+
+- kdewitt3
+- sthakur5
+- tiwari6
