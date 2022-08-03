@@ -647,13 +647,13 @@ plot(final_selected_model,
      col = green_color)
 ```
 
-We also ran model diagnostic tests to check linear regression assumptions(LINE) with the help of ``Breusch-Pagan Test`` and ``Shapiro-Wilk Test``. Decision of ``Breusch-Pagan Test`` for all the models was to reject the null hypothesis - meaning constant variable assumption (heteroscedasticity) is violated. Similarly, we found normality of error issue when we ran ``Shapiro-Wilk Test``. The p-value for both the tests for all the models were very low compared to significance level of 0.05.    
+We also ran model diagnostic tests to check linear regression assumptions (LINE) with the help of ``Breusch-Pagan Test`` and ``Shapiro-Wilk Test``. Decision of ``Breusch-Pagan Test`` for all the models was to reject the null hypothesis - meaning constant variable assumption (heteroscedasticity) is violated. Similarly, we found normality of error issue when we ran ``Shapiro-Wilk Test``. The p-value for both the tests for all the models were very low compared to significance level of 0.05.    
 
 ```{r}
 get_model_diagnostic_tests(cahoudta_models, cahoudta_model_names)
 ```
 
-We are showing the model diagnostic plots for our top 2 models 1) ``cahoudta_full_add_model`` and 2) ``cahoudta_add_bckwd_bic_model``. As it can be seen, with log transformation of response we could mitigate the issues of heteroscedasticity and normality of error assumptions. However, both these assumptions are srill violated as it can be seen from the plots below. 
+We are showing the model diagnostic plots for our top 2 models 1) ``cahoudta_full_add_model`` and 2) ``cahoudta_add_bckwd_bic_model``. As it can be seen, with log transformation of response we could mitigate the issues of heteroscedasticity and normality of error assumptions. However, both these assumptions are still violated as it can be seen from the plots below. 
 
 ```{r fig.height=8, fig.width=12}
 
@@ -710,16 +710,12 @@ It is also important to underscore future directions for analyses on this data s
 
 Our team discussed about the idea of extracting meaningful Geo-Spatial insights utilizing variables derived from  `Latitude` and `Longitude`. The hypothesis being, house within 50 mile radius of a large city in California would likely have a higher median price. We considered leveraging Geo-Spatial libraries for this transformation activity. For example 'Haversine Formula' can be used to calculate distance between two points on a sphere based on latitude and longitude. Another alternative considered was to use Euclidean Distance. In the interest of time and to avoid scope creep, we decided not to create these variables. We think there is potential in future to transform this data and include additional Geo-Spatial variables to allow for better modeling. 
 
-Based on the response variable `median_house_value` histogram, we found that median house prices are capped at the top. We would like to further explore the impacts of this in our modeling from a fitting exercise. One possible mitigation is to  truncate the observations with a very high median house prices. Due to capping of the response variable, the accuracy of the model in this price range would not be good anyway.  
-
-Our last model `cahoudta_2int_txfd_model` has the highest adjusted r-squared value on training data, but Test RMSE is very high indicating overfitting. In future we would like to investigate this further with the objective of mitigating overfitting without sacrificing high adjusted r-squared. 
-
-Constant variance assumption is still getting violated per BP Test results and 'Fitted vs. Residual' plot. In future, we would like to further mitigate the issue by trying additional transformations such as Box-Cox of predictor variables. Similarly, Q-Q plot for top two models look much improved compared to when we started modeling with the raw data. Time permitting, we would like to further investigate  normality of error assumption by using more transformations of predictor variables.  
+Constant variance assumption is still getting violated per BP Test results and 'Fitted vs. Residual' plot. In future, we would have liked to further mitigate the issue by trying additional transformations such as Box-Cox of predictor variables. Similarly, Q-Q plot for top two models look much improved compared to when we started modeling with the untransformed response variable Time permitting, we would have liked to further investigate transformations  of the predictor variables to ensure we the assumption of normality.  
 
 
 ## Appendix 
 
-Below we have included additional code used for model selection and a link to our GitHub repo.
+Below we have included a link to our GitHub repo.
 
 ### GitHub Repo for All Project Related Code
 
