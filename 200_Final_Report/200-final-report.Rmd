@@ -20,6 +20,8 @@ library(faraway)
 library(knitr)
 library(broom)
 library(sf)
+library(lmtest)
+
 
 green_color <- "#009E73"
 ```
@@ -119,7 +121,107 @@ model_performance_metrics = function(models, model_names, data){
 }
 ```
 
-<!TODO Please add only relevant helper functions that will be used for results. Including the driver function. >
+
+**Function   : **`get_model_diagnostic_tests` will generate model diagnostic tests such as:
+                  B-P Test and Shapiro-Wilk test to check homoscedasticity and normality of residuals
+
+**Inputs: **
+
+*models      : * A list of models and model names to generate the results table
+
+**Output     : ** Table with following diagnostic metrics as columns and a row for each model 
+                  provided in `model_names` as input.
+
+                  B-P Test P-Value
+                  B-P Test Decision
+                  Shapiro-Wilk Test P-Value
+                  Value	Shapiro-Wilk Test Decision
+
+```{r}
+
+get_model_diagnostic_tests = function(models, model_names){
+  
+  n_mod = length(models)
+  
+  diagnostics_metrics_df = data.frame(
+    row.names = model_names,
+    "BP_P_Value" = rep(0.0, n_mod),
+    "BP_DEC" = rep("", n_mod),
+    "SW_P_VALUE"  = rep(0.0, n_mod),
+    "SW_DEC" = rep("", n_mod)
+  )
+  
+  for (idx in 1:n_mod){
+    bp_pval = format.pval(bptest(models[[idx]])$p.value)
+    diagnostics_metrics_df[model_names[idx], "BP_P_Value"] = bp_pval
+    diagnostics_metrics_df[model_names[idx], "BP_DEC"] = ifelse(bp_pval < 0.05, 
+                                                                "Reject", 
+                                                                "Fail to Reject")
+    
+    # using first 5000 observations for shapiro.test given function limitation in R
+    sw_pval = format.pval(shapiro.test(resid(models[[idx]])[1:5000])$p.value)
+    diagnostics_metrics_df[model_names[idx], "SW_P_VALUE"] = sw_pval
+    diagnostics_metrics_df[model_names[idx], "SW_DEC"] = ifelse(sw_pval < 0.05, 
+                                                                "Reject", 
+                                                                "Fail to Reject")
+  }
+  
+  # Diagnostics of Models
+  kable(diagnostics_metrics_df,
+        col.names = c("B-P Test P-Value",
+                      "B-P Test Decision",
+                      "Shapiro-Wilk Test P-Value",
+                      "Shapiro-Wilk Test Decision"),
+        caption = "Comparative Model Diagnostics")
+}
+
+
+```
+
+**Function   : **`get_model_diagnostic_plots` will generate model diagnostic plots such:
+                  as Q-Q plot or fitted vs. residuals plot
+
+**Inputs: **
+
+*models      : * A list of models to generate the plots
+
+**Returns    : ** None
+
+**Output     : ** Plots showing diagnostic metrics 'Fitted vs. Residuals' & 'Q-Q  Plots' 
+                  for our top two models.
+
+                  Fitted vs. Residuals plots to check LINE assumption - Heteroscedasticity 
+                  Q-Q Plot to check LINE assumption - normality of error term
+                  
+```{r}
+get_model_diagnostic_plots = function(models, model_names){
+  
+  n_mod = length(models)
+  
+  par(mfrow=c(1,2))
+  for (i in 1:n_mod){
+    plot(fitted(models[[i]]), resid(models[[i]]), 
+       col = green_color, 
+       pch = 20, 
+       xlab = "Fitted", 
+       ylab = "Residuals", 
+       main = paste0("Fitted vs. Residual for ", 
+                     model_names[[i]])
+       )
+    abline(h = 0, col = "darkorange", lwd = 2)
+  }
+
+  par(mfrow=c(1,2))
+  for (i in 1:n_mod){
+    qqnorm(resid(models[[i]]), col = green_color, pch = 20,  
+         main = paste0("Q-Q Plot for ", 
+                       model_names[[i]]), 
+         )
+    qqline(resid(models[[i]]), col = "darkorange", lwd = 2)
+  }
+}
+
+```
 
 ### Data Cleaning
 
@@ -410,7 +512,12 @@ message("Model 8: Formula: ", less_preds)
 cahoudta_lola_add_mod = lm(formula = less_preds, data = ca_housing_data.tr)
 ```
 
-Our final step was to attempt variable transformations to attempt to better capture the variance in the response variable. We transformed predictors `population` and `total_rooms` to be normalized with predictor `households`. <!TODO: Avi, can you add about your reasoning here why we need additional variables transformed. The results are showing that this model is over-fitting?>
+Our final step was to attempt variable transformations to attempt to better capture the variance in the response variable. We transformed predictors `population` and `total_rooms` to be normalized with predictor `households`. We thought derived variables 'rooms_per_hh' and 'pop_per_hh' would add predictive power to the model because of the following reasons. 
+
+- ``rooms_per_hh``: houses with higher number of rooms per household in a block would be larger having a positive correlation with median housing prices 
+
+- ``pop_per_hh``: block with bigger houses will attract larger families (population_per_household)
+
 
 ```{r}
 ca_housing_data.tr$pop_per_hh = (ca_housing_data.tr$population / 
@@ -503,7 +610,7 @@ The final selected model has following features:
 
 - High *adjusted $R^2$* of **0.7596**
 - Lowest *Test RMSE* of **0.3407**
-- Lowest *Train RMSE* of **0.26878*
+- Lowest *Train RMSE* of **0.26878**
 - Lowest number of coefficients **(10)** makes this model easy to interpret and computationally efficient.
 
 The following are all the predictors for the model `cahoudta_add_bckwd_bic_model` with test statistics and p-values.
@@ -514,27 +621,32 @@ names(coef_matrix) <- c("Estimate", "Standard Error", "t Value", "P Value")
 kable(coef_matrix, digits = 5, caption = "Table of Predictors and Test Statistics")
 ```
 
-We also ran all the standard diagnostics on this model.
+We also ran model diagnostic tests to check linear regression assumptions (LINE) with the help of `Breusch-Pagan Test` and `Shapiro-Wilk Test`. Decision of `Breusch-Pagan Test` for all the models is to reject the null hypothesis indicating violation of constant variable assumption (heteroscedasticity). Similarly, `Shapiro-Wilk Test` test indicates violation of normality assumption.  
 
-```{r fig.height=12, fig.width=12}
-par(mfrow=c(2, 2))
-
-plot(final_selected_model,
-     pch = 20,
-     col = green_color)
+```{r}
+get_model_diagnostic_tests(cahoudta_models, cahoudta_model_names)
 ```
 
+Residual vs Fitted plot and Q-Q plot for the two selected models 1) `cahoudta_full_add_model` and 2) `cahoudta_add_bckwd_bic_model` confirms the violation of assumptions for normality and constant variance. 
 
-<!TODO: Avi's helper methods related to results should go under "METHODS" Section. Call the driver function here.>
-<!TODO: Compare the two models 'cahoudta_full_add_model' and 'cahoudta_add_bckwd_bic_model'>
-<!TODO: Residuals vs Fitted Plot side by side for two models>
-<!TODO: bptest() for all models - tabular format for two models>
-<!TODO: Q-Q plot for each model side by side for two models>
-<!TODO: Shapiro Wilk test for all models - tabular format - for the two models>
-<!TODO: [Wishlist] Use pairs plot from "Models Selection" section as reference to build a magnified version
-        for each variable vs response under results section. Have a driver function which plots 6 scatterplots
-        and a box plot for ocean_proximity. Use log of response.>
+```{r fig.height=8, fig.width=12}
 
+# No of models for comparative charts 
+n_top_models = 2
+
+# create a vector list of models to pass to various functions
+top_cahoudta_models = vector("list", length = n_top_models)
+top_cahoudta_model_names = vector("character", length = n_top_models)
+
+top_cahoudta_models [[1]] = cahoudta_full_add_model
+top_cahoudta_model_names[[1]] = "cahoudta_full_add_model"
+
+top_cahoudta_models[[2]] = cahoudta_add_bckwd_bic_model
+top_cahoudta_model_names[[2]] = "cahoudta_add_bckwd_bic_model"
+
+
+get_model_diagnostic_plots(top_cahoudta_models, top_cahoudta_model_names)
+```
 
 
 ## Discussion
@@ -543,15 +655,15 @@ We selected the model from backward selection with the base as the full additive
 
 ### Utility of Model
 
-As mentioned in above in [Limitations of the Data](#limitations-of-the-data), our data are from the 1990 Census, which means we are not using this model for prediction. Now that we have developed the best model with the available predictors, we can utilize the model to explain the relationship of geography to the `medain_house_value` of a block group. The following section is useful to understand historical context of the current California real estate market. We can also use this model to ask questions about the directionality of the impact of the different predictors. In other words, our model allows us to answer questions like "do higher income block groups have higher average `median_house_values`?" 
+As noted above in section [Limitations of the Data](#limitations-of-the-data), our data is from the 1990 Census, which means we are not using this model for prediction but for explanation. Now that we have identified the best model with the available predictors, we can utilize the model to explain the relationship of geography to the `median_house_value` of a block group in California. The following section is useful to understand historical context of the California real estate market. We can also use this model to ask questions about the directionality and impact of the different predictors on `median_house_value`. In other words, our model allows us to answer question "Does a higher income block group have a higher average `median_house_value`?" 
 
 ### Interpretation of Model in Context of CA Block Groups in 1990s
 
-There are several things to notice about the below table of $\hat{\beta}$'s when discussing the model. The first is to note is that since we did a log transformation of the response, we will need to exponentiate the $\hat{\beta}$'s to correctly interpret the multiplicative impact of each of these parameters on `median_house_value`. For ease of interpretability, we exponentiated the coefficients then subtracted 1 (because a coefficient less than 1 should be interpreted as a percent decrease in the average `median_house_value`, whereas a coefficient greater than 1 should be interpreted as a percent increase in the average `median_house_value`). 
+There are noteworthy things about the below table of $\hat{\beta}$'s when discussing the model. The first is to note is that since we did a log transformation of the response, we will need to exponentiate the $\hat{\beta}$'s to correctly interpret the multiplicative effect of each of these parameters on `median_house_value`. For ease of interpretability, we have exponentiated the coefficients and then subtracted 1. This is because a coefficient less than 1 should be interpreted as a percent decrease in the average `median_house_value`, whereas a coefficient greater than 1 should be interpreted as a percent increase in the average `median_house_value`.
 
 ```{r}
-coefs_exponeniated <- data.frame("Betas Exponentiated" = (exp(coef(final_selected_model)) - 1) * 100)
-kable(coefs_exponeniated)
+coefs_exponentiated <- data.frame("Betas Exponentiated" = (exp(coef(final_selected_model)) - 1) * 100)
+kable(coefs_exponentiated)
 ```
 
 Next, we discuss the role geography played in `median_house_value`. For the purpose of discussions, we included once again the graph of `median_house_value` based on latitude and longitude to allow the reader to review the model's findings against the geographical spread of the response variable.
@@ -560,30 +672,34 @@ Next, we discuss the role geography played in `median_house_value`. For the purp
 hs_value_plot
 ```
 
-Please note that our base level for `ocean_proximity` is "<1H OCEAN". The implication is that the average `median_house_value` of a block group decreases for any other `ocean_proximity`. This is not surprising based on the above graphic where we see discrete clusters of high value houses in San Francisco and Los Angeles. The model found that blocks classified as "INLAND" had a `r abs(coefs_exponeniated["ocean_proximityINLAND",])`% decrease in average `median_house_value` relative to the blocks classified as "<1H OCEAN". 
+Please note that our base level for `ocean_proximity` is "<1H OCEAN". The implication is that the average `median_house_value` of a block group decreases for any other `ocean_proximity`. This is not surprising based on the above graphic where we see discrete clusters of high value houses in San Francisco and Los Angeles. The model found that blocks classified as "INLAND" had a `r abs(coefs_exponentiated["ocean_proximityINLAND",])`% decrease in average `median_house_value` relative to the blocks classified as "<1H OCEAN". 
 
-The other two geographical variables, latitude and longitude, also have interesting interpretations based on our priors expecting geography to play a major role in price in 1990 CA block group house value. Specifically, for every 1 unit increase in latitude (moving Westward), we see a `r abs(coefs_exponeniated["latitude",])`% decrease in `median_house_value`. Similarly,  for every 1 unit increase in longitude (moving North), we see a `r abs(coefs_exponeniated["longitude",])`% decrease in `median_house_value`.
+The other two geographical variables, latitude and longitude, also have interesting interpretations based on our priors expecting geography to play a major role in price in 1990 CA block group house value. Specifically, for every 1 unit increase in latitude (moving Westward), we see a `r abs(coefs_exponentiated["latitude",])`% decrease in `median_house_value`. Similarly,  for every 1 unit increase in longitude (moving North), we see a `r abs(coefs_exponentiated["longitude",])`% decrease in `median_house_value`.
 
-The other key $\hat{\beta}$ to call attention to is that for `median_income`. For every 1 unit increase in median income, we see `r abs(coefs_exponeniated["median_income",])`% increase in the `median_house_value`. In other words, the model found that blocks with higher incomes would have higher values of `median_house_value`. 
+The other key $\hat{\beta}$ to call attention to is that for `median_income`. For every 1 unit increase in median income, we see `r abs(coefs_exponentiated["median_income",])`% increase in the `median_house_value`. In other words, the model found that blocks with higher incomes would have higher values of `median_house_value`. 
 
 ### Future Directions and Lessons Learned
 
-It is also important to underscore future directions for analyses on this data set that our group was not able to implement due to time constraints or the focus of the material of STAT420. This section is meant to emphasize the careful consideration our team took into ideating about the best way to model the data.
+It is also important to underscore future directions for analyses on this data set. Due to time constraints of this project our group was not able to implement some of these techniques. We also wanted to limit concepts and techniques from the course (STAT 420) while executing this final project. This section is meant to emphasize the careful considerations utilized by our team while building a simpler but effective model for the available data set.
 
-<!TODO: Avi to add details around thought process of using variable transformations such as converting lat/lon to
-        regions/counties. And explain why we couldn't do that in our project because of time constraints. 
-        If deemed necessary also add details around "euclidean" distance idea and reasoning behind exploring that
-        option.>
+Our team discussed about the idea of extracting meaningful Geo-Spatial insights utilizing variables derived from  `Latitude` and `Longitude`. The hypothesis being, house within 50 mile radius of a large city in California would likely have a higher median price. We considered leveraging Geo-Spatial libraries for this transformation activity. For example 'Haversine Formula' can be used to calculate distance between two points on a sphere based on latitude and longitude. Another alternative considered was to use Euclidean Distance. In the interest of time and to avoid scope creep, we decided not to create these variables. We think there is potential in future to transform this data and include additional Geo-Spatial variables to allow for better modeling. 
+
+During exploratory data analysis we identified that median house prices histogram is showing an abnormal peak at the tail end of response variable `median_house_value`, rather than usual normal distribution long tail. It would be a good exercise in future to further explore this abnormality observed and transform data to allow for more accurate modeling. To address this it may require deleting observations with very high `median_house_value`, fit the model and run tests. 
+
+The last model explored `cahoudta_2int_txfd_model` has the highest adjusted $R^2$ on training data but also a very high test RMSE which indicates overfitting. As a result we did not choose this model as one of possible solutions. It would be prudent to investigate if any other variable transformation mitigates overfitting, while still retaining high value for adjusted $R^2$ performance. 
+
+Constant variance assumption is still being violated as per BP Test results and 'Fitted vs. Residual' plot. It would be interesting to try additional transformations such as Box-Cox of predictor variables and see if resulting model is homoscedastic. Similarly, Q-Q plot for top two models track much better compared to models without log transformation of response variable median_house_value`. 
+
 
 ## Appendix 
 
-Below we have included additional code used for model selection and a link to our GitHub repo.
+Below we have included a link to our GitHub repo.
 
 ### GitHub Repo for All Project Related Code
 
-In preparation for this project, each of our team members conducted EDA in our own .rmd files. Additionally, team members engaged in model building worked through many iterations that included variable creation, iterating with `step()`, and verifying the model assumptions. For the sake of brevity, we have not included all code used to select our model. However, we would like to leave a link to our GitHub repo where we all files and code developed in service of the project can be found.
+In preparation for this project, each of our team members conducted independent exploratory data analysis with separate .rmd files to understand data thoroughly. Additionally, team members engaged in model building worked through many iterations that included variable creation, iterating with `step()` search, and verifying the model assumptions. For the sake of brevity, we have not included all code used to select our model. However, we would like to leave a link to our GitHub repo where we all files and code developed in service of the project can be found.
 
-**The link to our GitHub repo is [https://github.com/katldewitt/house_price_prediction](https://github.com/katldewitt/house_price_prediction).**
+The link to our GitHub repo is: [California House Price Prediction](https://github.com/katldewitt/house_price_prediction)
 
 ### Authors
 
