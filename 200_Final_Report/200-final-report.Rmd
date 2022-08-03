@@ -151,13 +151,14 @@ get_model_diagnostic_tests = function(models, model_names){
   )
   
   for (idx in 1:n_mod){
-    bp_test_res = get_bp_decision(models[[idx]])
-    diagnostics_metrics_df[model_names[idx], "BP_P_Value"] = bp_test_res[1]
-    diagnostics_metrics_df[model_names[idx], "BP_DEC"] = bp_test_res[2]
+    bp_pval = format.pval(bptest(models[[idx]])$p.value)
+    diagnostics_metrics_df[model_names[idx], "BP_P_Value"] = bp_pval
+    diagnostics_metrics_df[model_names[idx], "BP_DEC"] = ifelse(bp_pval < 0.05, "Reject", "Fail to Reject")
     
-    sw_test_res = get_sw_decision(models[[idx]])
-    diagnostics_metrics_df[model_names[idx], "SW_P_VALUE"] = sw_test_res[1]
-    diagnostics_metrics_df[model_names[idx], "SW_DEC"] = sw_test_res[2]
+    # using first 5000 observations for shapiro.test given function limitation in R
+    sw_pval = format.pval(shapiro.test(resid(models[[idx]])[1:5000])$p.value)
+    diagnostics_metrics_df[model_names[idx], "SW_P_VALUE"] = sw_pval
+    diagnostics_metrics_df[model_names[idx], "SW_DEC"] = ifelse(sw_pval < 0.05, "Reject", "Fail to Reject")
   }
   
   # Diagnostics of Models
@@ -169,19 +170,6 @@ get_model_diagnostic_tests = function(models, model_names){
         caption = "Comparative Model Diagnostics")
 }
 
-# function to get decision of Breusch-Pagan Test (for checking homoscedasticity)
-get_bp_decision = function(model, alpha=0.05) {
-   bp_pval = bptest(model)$p.value
-  c(format.pval(bp_pval), ifelse(bp_pval < alpha, "Reject", "Fail to Reject"))
-}
-
-# function to get decision of Shapiro-Wilk Test (for normality of error term)  
-get_sw_decision = function(model, alpha=0.05) {
-  sw_pval = shapiro.test(resid(model)[1:5000])$p.value
-  # shapiro.test has a max cap of 5000, our dataset has over 20000 observations so sampling it down to 5000 for the method to function
-  #c(format.pval(shapiro.test(sample(resid(model), 5000))$p.value), ifelse(decide, "Reject", "Fail to Reject"))
-  c(format.pval(sw_pval), ifelse(sw_pval < alpha, "Reject", "Fail to Reject"))
-}
 
 ```
 
@@ -699,7 +687,7 @@ It is also important to underscore future directions for analyses on this data s
 
 Our team discussed about the potential of extracting meaningful Geo-Spatial insights / predictor variables based on 'Latitude' & 'Longitude' data. The hypothesis being, houses within 50 miles radius of large cities in California would likely have higher median prices. We considered leveraging Geo-Spatial libraries for this purpose. For example: 'Haversine Formula' to calculate distance between two points on a sphere based on latitude and longitude. Another alternative considered was to simply use Euclidian Distance. In the interest of time, we could not create these variables, but we believe a future direction with this data is including these Geo-Spatial variables in modeling. 
 
-Looking at the response variable histogram, we found that median house prices are capped at the top. We would like to further explore the impacts of this in our models from a fit perspective - possibly truncating observations with very high median house prices. Due to capping of the response variable, the accuracy of the model in this price range would not be good anyway.  
+Looking at the response variable histogram, it seems that median house prices are capped at the higher end instead of a long tail. We would like to further explore the impacts of this capping in our models. To address this, possibly deleting observations with very high median house prices and build the model only on median housing prices which are not capped. This data modification may limit the use of the model for very high housing prices but will help with overall accuracy (& R-square) for non-capped housing price range.  
 
 Our last model ``cahoudta_2int_txfd_model`` has the highest adjusted r-square on training data, although it suffers from over-fitting issue. We would like to investigate this further with the objective of mitigating over-fitting without sacrificing adjusted r-square performance. 
 
